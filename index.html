@@ -2,396 +2,339 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To Moko - Ultra Ligero</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>To Moko - Estado de Sincronización</title>
     <style>
-        /* Estilos Base - Reemplazo de Tailwind para funcionamiento offline total */
         :root {
             --bg: #0d1117;
             --card: #161b22;
             --border: #30363d;
             --primary: #4f46e5;
-            --primary-hover: #6366f1;
             --text: #c9d1d9;
             --text-dim: #8b949e;
-            --success: #238636;
+            --st-sync: #38bdf8; /* Azul */
+            --st-ready: #4ade80; /* Verde */
+            --st-fail: #fb923c;  /* Naranja */
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             display: flex;
-            align-items: center;
             justify-content: center;
             min-height: 100vh;
             padding: 15px;
         }
 
-        .card {
+        .container {
             background-color: var(--card);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 24px;
             width: 100%;
-            max-width: 360px;
+            max-width: 400px;
             padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            align-self: center;
         }
 
-        /* Utilidades */
-        .flex { display: flex; }
-        .justify-between { justify-content: space-between; }
-        .items-center { align-items: center; }
-        .hidden { display: none !important; }
-        .text-center { text-align: center; }
-        .mt-4 { margin-top: 16px; }
-        .mb-6 { margin-bottom: 24px; }
-
-        /* Badge de Estado */
+        /* Badge de Estado Dinámico */
+        .status-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .badge {
-            font-size: 9px;
-            font-weight: bold;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 6px 12px;
+            border-radius: 20px;
             text-transform: uppercase;
-            padding: 2px 8px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid transparent;
+            transition: all 0.4s ease;
         }
-        .badge-loading { background: rgba(255, 165, 0, 0.1); color: orange; }
-        .badge-ready { background: rgba(35, 134, 54, 0.1); color: #4ade80; border-color: rgba(74, 222, 128, 0.2); }
+        .st-sync { background: rgba(56, 189, 248, 0.1); color: var(--st-sync); border-color: rgba(56, 189, 248, 0.3); }
+        .st-ready { background: rgba(74, 222, 128, 0.1); color: var(--st-ready); border-color: rgba(74, 222, 128, 0.3); }
+        .st-fail { background: rgba(251, 146, 60, 0.1); color: var(--st-fail); border-color: rgba(251, 146, 60, 0.3); }
 
         /* Navegación */
-        nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-        .nav-btn {
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+        .tab-btn {
             flex: 1;
-            background: none;
-            border: none;
-            color: var(--text-dim);
             padding: 12px;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-            position: relative;
-        }
-        .nav-btn.active { color: var(--primary-hover); }
-        .nav-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 20%;
-            width: 60%;
-            height: 2px;
-            background: var(--primary-hover);
-        }
-
-        /* Botones */
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 1px;
-        }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:active { transform: scale(0.98); background: var(--primary-hover); }
-        .btn-secondary { background: #21262d; color: var(--text); border: 1px solid var(--border); }
-
-        /* Inputs */
-        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        input {
-            background: #0d1117;
+            background: #21262d;
             border: 1px solid var(--border);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            width: 100%;
+            color: var(--text-dim);
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
         }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Radar */
-        .radar-container { padding: 30px 0; display: flex; flex-direction: column; items-center: center; text-align: center; }
-        .circle {
-            width: 80px;
-            height: 80px;
-            border: 2px solid var(--primary);
+        /* UI Principal */
+        .btn { width: 100%; padding: 18px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: 0.2s; }
+        .btn-main { background: var(--primary); color: white; margin-bottom: 12px; }
+        .btn-main:active { transform: scale(0.97); }
+
+        .hidden { display: none !important; }
+
+        /* Radar Animación */
+        .radar-view { text-align: center; padding: 40px 0; }
+        .radar-circle {
+            width: 100px;
+            height: 100px;
+            border: 4px solid var(--primary);
             border-radius: 50%;
             margin: 0 auto 20px;
             position: relative;
         }
         .pulse {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border: 2px solid var(--primary);
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border: 4px solid var(--primary);
             border-radius: 50%;
-            animation: pulse-anim 2s infinite;
+            animation: pulse-ring 2s infinite;
         }
-        @keyframes pulse-anim {
-            0% { transform: scale(1); opacity: 0.8; }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
             100% { transform: scale(1.8); opacity: 0; }
         }
 
-        /* Imágenes */
-        .moko-img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 10px;
-            background: #010409;
-            margin-bottom: 12px;
-        }
-
         /* Colección */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .thumb {
-            background: #21262d;
-            padding: 8px;
-            border-radius: 12px;
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .moko-thumb {
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 16px;
             border: 1px solid var(--border);
             text-align: center;
+            cursor: pointer;
         }
-        .thumb img { width: 100%; height: 60px; object-fit: cover; border-radius: 6px; }
-        .thumb p { font-size: 9px; margin: 5px 0 0; font-weight: bold; }
+        .moko-thumb img { width: 100%; height: 80px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+        .moko-thumb span { font-size: 10px; font-weight: bold; color: var(--text); display: block; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div class="flex justify-between items-center mb-6">
-            <div id="status" class="badge badge-loading">Sincronizando...</div>
-            <div id="conn" style="font-size: 8px; color: #555;">ONLINE</div>
+    <div class="container">
+        <div class="status-header">
+            <div id="status-badge" class="badge st-sync">Sincronizando...</div>
+            <div id="conn-type" style="font-size: 9px; font-weight: bold; color: #555;">[ RED: BUSCANDO ]</div>
         </div>
 
-        <nav>
-            <button id="tab-scan" class="nav-btn active">ESCÁNER</button>
-            <button id="tab-coll" class="nav-btn">COLECCIÓN (<span id="count">0</span>)</button>
-        </nav>
+        <div class="tabs">
+            <button id="nav-scan" class="tab-btn active">RADAR</button>
+            <button id="nav-coll" class="tab-btn">COLECCIÓN (<span id="count">0</span>)</button>
+        </div>
 
-        <!-- ESCÁNER -->
+        <!-- VISTA RADAR -->
         <div id="view-scan">
-            <div id="ui-main">
-                <div class="text-center mb-6">
-                    <h1 style="margin:0; font-style: italic; letter-spacing: -1px;">TO MOKO</h1>
-                    <p style="font-size: 9px; color: var(--text-dim); margin-top: 4px; letter-spacing: 2px;">RECEPTOR DE COORDENADAS</p>
+            <div id="ui-controls">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="margin: 0; font-style: italic; font-size: 32px; letter-spacing: -1px;">TO MOKO</h1>
+                    <p style="font-size: 10px; color: var(--text-dim); letter-spacing: 4px; font-weight: bold;">OFFLINE TRACKER</p>
                 </div>
 
-                <div class="input-group" style="background: #010409; padding: 4px; border-radius: 10px; margin-bottom: 20px;">
-                    <button id="mode-gps" class="nav-btn active" style="padding: 8px; border-radius: 7px; background: var(--primary);">GPS</button>
-                    <button id="mode-man" class="nav-btn" style="padding: 8px;">MANUAL</button>
+                <div style="background: #010409; padding: 15px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px;">
+                    <p style="font-size: 10px; font-weight: bold; margin-bottom: 10px; color: var(--primary);">MODO GPS</p>
+                    <button id="btn-gps" class="btn btn-main">Escaneo Satelital</button>
                 </div>
 
-                <div id="gps-box">
-                    <button id="btn-gps" class="btn btn-primary">Escaneo Satelital</button>
-                </div>
-
-                <div id="manual-box" class="hidden">
-                    <div class="input-group">
-                        <input type="number" id="lat" placeholder="Latitud" step="any">
-                        <input type="number" id="lon" placeholder="Longitud" step="any">
+                <div style="background: #010409; padding: 15px; border-radius: 16px; border: 1px solid var(--border);">
+                    <p style="font-size: 10px; font-weight: bold; margin-bottom: 10px; color: var(--text-dim);">MODO MANUAL</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <input type="number" id="lat" placeholder="Lat" style="background: #161b22; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px;">
+                        <input type="number" id="lon" placeholder="Lon" style="background: #161b22; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px;">
                     </div>
-                    <button id="btn-man" class="btn btn-secondary">Rastreo Manual</button>
+                    <button id="btn-man" class="btn" style="background: #21262d; color: white;">Comparar</button>
                 </div>
             </div>
 
-            <!-- Radar Animación -->
-            <div id="ui-radar" class="radar-container hidden">
-                <div class="circle">
-                    <div class="pulse"></div>
-                    <div class="pulse" style="animation-delay: 1s"></div>
-                </div>
-                <p style="font-size: 10px; color: var(--primary-hover); font-weight: bold; letter-spacing: 2px;">BUSCANDO SEÑAL...</p>
-                <p id="coords-log" style="font-size: 8px; font-family: monospace; color: #444; margin-top: 10px;"></p>
+            <!-- Radar Loading -->
+            <div id="ui-radar" class="radar-view hidden">
+                <div class="radar-circle"><div class="pulse"></div></div>
+                <p style="color: var(--st-sync); font-weight: 800; font-size: 12px; letter-spacing: 2px;">INTERCEPTANDO SEÑAL...</p>
             </div>
 
-            <!-- Resultado -->
-            <div id="ui-match" class="mt-4 hidden" style="padding: 15px; background: rgba(79, 70, 229, 0.05); border-radius: 15px; border: 1px solid rgba(79, 70, 229, 0.2);">
-                <h2 id="m-name" style="margin: 0 0 10px 0; font-size: 18px; font-style: italic; color: white;"></h2>
-                <img id="m-img" class="moko-img" src="" alt="">
-                <p id="m-desc" style="font-size: 10px; color: var(--text-dim); line-height: 1.4; margin: 0;"></p>
-            </div>
-            
-            <div id="ui-near" class="mt-4 hidden">
-                <p style="font-size: 8px; font-weight: bold; color: #444; margin-bottom: 8px; text-transform: uppercase;">Señales próximas:</p>
-                <div id="near-list"></div>
+            <!-- Detalle -->
+            <div id="ui-detail" class="hidden" style="margin-top: 20px; animation: fadeIn 0.5s;">
+                <img id="m-img" style="width:100%; height:220px; object-fit:cover; border-radius: 16px; margin-bottom: 15px; border: 1px solid var(--border);">
+                <h2 id="m-name" style="margin:0 0 10px 0; font-style: italic;"></h2>
+                <p id="m-desc" style="font-size: 12px; color: var(--text-dim); line-height: 1.6;"></p>
             </div>
         </div>
 
-        <!-- COLECCIÓN -->
+        <!-- VISTA COLECCIÓN -->
         <div id="view-coll" class="hidden">
-            <h2 style="font-size: 18px; margin-bottom: 15px; font-style: italic;">HISTORIAL</h2>
+            <h2 style="font-style: italic; margin-bottom: 20px;">HALLAZGOS</h2>
             <div id="coll-grid" class="grid"></div>
-            <p id="coll-empty" style="font-size: 11px; color: #444; text-align: center; margin-top: 40px;">Tu base de datos está vacía.</p>
+            <p id="coll-empty" style="text-align: center; padding: 50px 0; color: #444; font-size: 12px;">Tu colección está vacía.</p>
         </div>
     </div>
 
-    <div id="preloader" style="display:none"></div>
-
     <script>
-        // DATA
+        // CONFIG
         const STATIONS = [
-            { id: "u1", name: "Urutengangana", img: "img/Urutengangana.jpg", desc: "Dios de la luz original y el conocimiento.", lat: -41.168, lon: 174.060 },
-            { id: "t1", name: "Tumatauenga", img: "img/Tumatauenga.jpg", desc: "Dios de la guerra y la estrategia humana.", lat: -39.352, lon: 174.221 },
-            { id: "r1", name: "Rūaumoko", img: "img/ruaumoko.jpg", desc: "Dios de los movimientos de la tierra.", lat: -42.111, lon: 172.601 },
-            { id: "p1", name: "Pekapeka", img: "img/pekapekamaori.jpg", desc: "Espíritu alado de los bosques antiguos.", lat: -37.066, lon: 174.863 },
-            { id: "ro1", name: "Rongo", img: "img/rongo.jpg", desc: "Dios de la paz y las artes agrícolas.", lat: -42.915, lon: 171.954 }
+            { id: "1", name: "Urutengangana", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400", desc: "Dios de la luz primordial y el conocimiento.", lat: -41.168, lon: 174.060 },
+            { id: "2", name: "Tumatauenga", img: "https://images.unsplash.com/photo-1590424768411-9a742880194a?w=400", desc: "Deidad de la guerra y la supervivencia.", lat: -39.352, lon: 174.221 },
+            { id: "3", name: "Rūaumoko", img: "https://images.unsplash.com/photo-1467385829985-2b0fb82b5193?w=400", desc: "El dios de los terremotos y volcanes.", lat: -42.111, lon: 172.601 }
         ];
 
-        let unlocked = JSON.parse(localStorage.getItem('moko_saved') || '[]');
+        let unlocked = JSON.parse(localStorage.getItem('mokos_final') || '[]');
+        
+        // UI REFS
+        const badge = document.getElementById('status-badge');
+        const connText = document.getElementById('conn-type');
+        const countDisplay = document.getElementById('count');
 
-        // DOM
-        const views = {
-            scan: document.getElementById('view-scan'),
-            coll: document.getElementById('view-coll'),
-            main: document.getElementById('ui-main'),
-            radar: document.getElementById('ui-radar'),
-            match: document.getElementById('ui-match'),
-            near: document.getElementById('ui-near')
-        };
+        // LÓGICA DE ESTADOS (PROCESO DE CARGA)
+        let isFullyLoaded = false;
 
-        // NAVEGACIÓN
-        function setTab(tab) {
-            const isScan = tab === 'scan';
-            views.scan.classList.toggle('hidden', !isScan);
-            views.coll.classList.toggle('hidden', isScan);
-            document.getElementById('tab-scan').classList.toggle('active', isScan);
-            document.getElementById('tab-coll').classList.toggle('active', !isScan);
-            if(!isScan) renderColl();
+        function updateStatus(state) {
+            badge.className = 'badge ' + state;
+            if (state === 'st-sync') badge.textContent = 'Sincronizando...';
+            if (state === 'st-ready') {
+                badge.textContent = 'Listo (Offline)';
+                isFullyLoaded = true;
+            }
+            if (state === 'st-fail') badge.textContent = 'Modo Híbrido';
         }
-        document.getElementById('tab-scan').onclick = () => setTab('scan');
-        document.getElementById('tab-coll').onclick = () => setTab('coll');
 
-        document.getElementById('mode-gps').onclick = () => {
-            document.getElementById('gps-box').classList.remove('hidden');
-            document.getElementById('manual-box').classList.add('hidden');
-            document.getElementById('mode-gps').style.background = 'var(--primary)';
-            document.getElementById('mode-man').style.background = 'none';
-        };
-        document.getElementById('mode-man').onclick = () => {
-            document.getElementById('manual-box').classList.remove('hidden');
-            document.getElementById('gps-box').classList.add('hidden');
-            document.getElementById('mode-man').style.background = 'var(--primary)';
-            document.getElementById('mode-gps').style.background = 'none';
-        };
+        // Simular timeout de fallo si el SW no responde
+        const loadTimeout = setTimeout(() => {
+            if (!isFullyLoaded) updateStatus('st-fail');
+        }, 6000);
 
-        // LÓGICA
-        async function runScan(lat, lon) {
-            views.main.classList.add('hidden');
-            views.match.classList.add('hidden');
-            views.near.classList.add('hidden');
-            views.radar.classList.remove('hidden');
-            document.getElementById('coords-log').textContent = `LAT: ${lat.toFixed(3)} | LON: ${lon.toFixed(3)}`;
+        // LÓGICA DE NEGOCIO
+        async function startRadar(lat, lon) {
+            document.getElementById('ui-controls').classList.add('hidden');
+            document.getElementById('ui-detail').classList.add('hidden');
+            document.getElementById('ui-radar').classList.remove('hidden');
 
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise(r => setTimeout(r, 2500));
 
-            views.radar.classList.add('hidden');
-            views.main.classList.remove('hidden');
+            document.getElementById('ui-radar').classList.add('hidden');
+            document.getElementById('ui-controls').classList.remove('hidden');
 
-            const R = 6371;
+            // Cálculo distancia
             STATIONS.forEach(s => {
-                const dLat = (s.lat - lat) * Math.PI / 180;
-                const dLon = (s.lon - lon) * Math.PI / 180;
-                const a = Math.sin(dLat/2)**2 + Math.cos(lat*Math.PI/180) * Math.cos(s.lat*Math.PI/180) * Math.sin(dLon/2)**2;
-                s.dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const dLat = (s.lat - lat) * Math.PI/180;
+                const dLon = (s.lon - lon) * Math.PI/180;
+                const a = Math.sin(dLat/2)**2 + Math.cos(lat*Math.PI/180)*Math.cos(s.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+                s.dist = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             });
 
             STATIONS.sort((a,b) => a.dist - b.dist);
             const win = STATIONS[0];
 
-            if(win.dist < 0.05) {
+            if(win.dist < 0.1) {
                 if(!unlocked.includes(win.id)) {
                     unlocked.push(win.id);
-                    localStorage.setItem('moko_saved', JSON.stringify(unlocked));
-                    document.getElementById('count').textContent = unlocked.length;
+                    localStorage.setItem('mokos_final', JSON.stringify(unlocked));
+                    countDisplay.textContent = unlocked.length;
                 }
-                showMoko(win);
-            } else {
-                views.near.classList.remove('hidden');
-                const list = document.getElementById('near-list');
-                list.innerHTML = '';
-                STATIONS.slice(0,2).forEach(s => {
-                    const row = document.createElement('div');
-                    row.style = "display:flex; justify-content:space-between; font-size:9px; padding:5px 0; border-bottom:1px solid #222;";
-                    row.innerHTML = `<span>${s.name}</span><span style="color:var(--primary-hover)">${s.dist.toFixed(2)}km</span>`;
-                    list.appendChild(row);
-                });
+                renderMoko(win);
             }
         }
 
-        function showMoko(m) {
+        function renderMoko(m) {
             document.getElementById('m-name').textContent = m.name;
             document.getElementById('m-img').src = m.img;
             document.getElementById('m-desc').textContent = m.desc;
-            views.match.classList.remove('hidden');
-            views.match.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('ui-detail').classList.remove('hidden');
         }
 
-        function renderColl() {
+        function renderCollection() {
             const grid = document.getElementById('coll-grid');
             const empty = document.getElementById('coll-empty');
             grid.innerHTML = '';
-            document.getElementById('count').textContent = unlocked.length;
             if(unlocked.length === 0) { empty.classList.remove('hidden'); return; }
             empty.classList.add('hidden');
             unlocked.forEach(id => {
                 const m = STATIONS.find(s => s.id === id);
                 if(m) {
                     const d = document.createElement('div');
-                    d.className = 'thumb';
-                    d.onclick = () => { setTab('scan'); showMoko(m); };
-                    d.innerHTML = `<img src="${m.img}"><p>${m.name.toUpperCase()}</p>`;
+                    d.className = 'moko-thumb';
+                    d.onclick = () => { document.getElementById('nav-scan').click(); renderMoko(m); };
+                    d.innerHTML = `<img src="${m.img}"><span>${m.name.toUpperCase()}</span>`;
                     grid.appendChild(d);
                 }
             });
         }
 
-        // EVENTOS
+        // NAVEGACIÓN
+        document.getElementById('nav-scan').onclick = () => {
+            document.getElementById('view-scan').classList.remove('hidden');
+            document.getElementById('view-coll').classList.add('hidden');
+            document.getElementById('nav-scan').classList.add('active');
+            document.getElementById('nav-coll').classList.remove('active');
+        };
+        document.getElementById('nav-coll').onclick = () => {
+            document.getElementById('view-scan').classList.add('hidden');
+            document.getElementById('view-coll').classList.remove('hidden');
+            document.getElementById('nav-scan').classList.remove('active');
+            document.getElementById('nav-coll').classList.add('active');
+            renderCollection();
+        };
+
+        // BOTONES
         document.getElementById('btn-gps').onclick = () => {
-            navigator.geolocation.getCurrentPosition(p => runScan(p.coords.latitude, p.coords.longitude), 
-            () => { document.getElementById('btn-gps').textContent = "ERROR GPS"; setTimeout(()=>document.getElementById('btn-gps').textContent="Escaneo Satelital", 2000); });
+            navigator.geolocation.getCurrentPosition(p => startRadar(p.coords.latitude, p.coords.longitude));
         };
         document.getElementById('btn-man').onclick = () => {
             const la = parseFloat(document.getElementById('lat').value);
             const lo = parseFloat(document.getElementById('lon').value);
-            if(!isNaN(la)) runScan(la, lo);
+            if(!isNaN(la)) startRadar(la, lo);
         };
 
-        // SW & INIT
-        window.onload = () => {
-            document.getElementById('count').textContent = unlocked.length;
-            const pre = document.getElementById('preloader');
-            STATIONS.forEach(s => { const i = new Image(); i.src = s.img; pre.appendChild(i); });
+        // SERVICE WORKER & COMUNICACIÓN
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'moko-v9';
+                const ASSETS = ['./', './index.html'];
 
-            if ('serviceWorker' in navigator) {
-                const sw = `
-                const NAME = 'moko-lite-v1';
-                self.addEventListener('install', e => e.waitUntil(caches.open(NAME).then(c => c.add('./index.html'))));
-                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-                    if(e.request.url.includes('img/')) {
-                        const cl = res.clone();
-                        caches.open(NAME).then(c => c.put(e.request, cl));
-                    }
-                    return res;
-                }))));`;
-                const b = new Blob([sw], {type: 'text/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(b)).then(() => {
-                    const s = document.getElementById('status');
-                    s.textContent = "SISTEMA LISTO";
-                    s.className = "badge badge-ready";
+                self.addEventListener('install', e => {
+                    e.waitUntil(
+                        caches.open(CACHE_NAME).then(cache => {
+                            return cache.addAll(ASSETS).then(() => {
+                                // Informamos a la pestaña que todo se cargó
+                                self.skipWaiting();
+                            });
+                        })
+                    );
                 });
-            }
-        };
 
-        window.addEventListener('online', () => document.getElementById('conn').textContent = "ONLINE");
-        window.addEventListener('offline', () => document.getElementById('conn').textContent = "OFFLINE");
+                self.addEventListener('activate', e => {
+                    e.waitUntil(clients.claim().then(() => {
+                        return self.clients.matchAll().then(all => {
+                            all.forEach(client => client.postMessage({type: 'LOAD_COMPLETE'}));
+                        });
+                    }));
+                });
+
+                self.addEventListener('fetch', e => {
+                    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+                });
+            `;
+            
+            const blob = new Blob([swCode], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob));
+
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data.type === 'LOAD_COMPLETE') {
+                    updateStatus('st-ready');
+                    clearTimeout(loadTimeout);
+                }
+            });
+        }
+
+        // INIT
+        window.onload = () => {
+            countDisplay.textContent = unlocked.length;
+            connText.textContent = navigator.onLine ? "[ RED: ONLINE ]" : "[ RED: OFFLINE ]";
+        };
+        window.ononline = () => connText.textContent = "[ RED: ONLINE ]";
+        window.onoffline = () => connText.textContent = "[ RED: OFFLINE ]";
     </script>
 </body>
 </html>
 
-    
