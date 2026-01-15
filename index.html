@@ -3,173 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Localizador To Moko</title>
+    <title>To Moko Offline Collector</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0d1117; }
-        .card { background-color: #161b22; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
-        .result-label { color: #8b949e; }
-        .result-value { color: #c9d1d9; word-break: break-all; }
-        img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; }
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+        .card { background-color: #161b22; border: 1px solid #30363d; }
+        .moko-img-container { position: relative; width: 100%; height: 200px; background: #010409; border-radius: 8px; overflow: hidden; }
+        #matched-station-img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
 
-    <div id="app" class="card p-6 md:p-8 w-full max-w-sm mx-auto rounded-xl border border-gray-700">
-        <h1 class="text-2xl font-bold text-white mb-2 text-center">Localizador To Moko</h1>
-        <p class="text-sm text-gray-400 mb-6 text-center">Captura los símbolos Maorí escondidos</p>
+    <div id="app" class="card p-6 w-full max-w-sm mx-auto rounded-xl shadow-2xl">
+        <header class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-white">To Moko Collector</h1>
+            <p class="text-xs text-gray-400">Captura símbolos Maorí incluso sin internet</p>
+        </header>
 
-        <button id="get-location-btn" class="w-full py-3 px-4 mb-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg active:scale-95 transition">
-            Buscar
+        <button id="get-location-btn" class="w-full py-4 px-4 mb-6 rounded-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg active:scale-95 transition-all">
+            BUSCAR SÍMBOLOS
         </button>
 
-        <div id="message" class="text-center text-sm mb-4 text-yellow-400 hidden">
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            Buscando To Moko...
+        <div id="message" class="text-center text-sm mb-4 text-yellow-500 hidden italic">
+            Conectando con los espíritus (GPS)...
         </div>
 
-        <!-- Alerta de Coincidencia -->
-        <div id="match-alert" class="mt-6 p-4 bg-green-900/50 text-green-300 border border-green-700 rounded-xl text-center hidden">
-            <div class="text-3xl mb-2">🎉</div>
-            <p class="font-bold text-lg">¡Has capturado un Moko!</p>
-            <p class="text-sm text-green-200 mt-1">Estás muy cerca de </p>
-            <p id="matched-station-name" class="font-bold text-xl text-white my-2"></p>
-            <img id="matched-station-img" src="" alt="Moko Image" class="border-2 border-green-500 mb-2">
-            <p id="matched-station-description" class="text-xs text-green-100 mt-2 text-justify italic"></p>
+        <!-- Alerta de Captura -->
+        <div id="match-alert" class="mt-4 p-4 bg-green-900/30 border border-green-500/50 rounded-xl hidden">
+            <div class="flex items-center justify-center mb-2">
+                <span class="text-2xl mr-2">✨</span>
+                <p class="font-bold text-green-400 uppercase tracking-widest text-sm">¡Moko Capturado!</p>
+            </div>
+            <h2 id="matched-station-name" class="text-center text-xl font-bold text-white mb-3"></h2>
+            
+            <div class="moko-img-container mb-3 border border-gray-700">
+                <img id="matched-station-img" src="" alt="Moko">
+            </div>
+            
+            <p id="matched-station-description" class="text-xs text-gray-300 leading-relaxed text-justify"></p>
         </div>
 
-        <!-- Resultados GPS -->
-        <div id="results-container" class="mt-4 space-y-2 p-3 bg-gray-800 rounded-lg hidden text-xs">
-            <div class="flex justify-between"><span class="result-label">Lat:</span><span id="latitude" class="result-value"></span></div>
-            <div class="flex justify-between"><span class="result-label">Lon:</span><span id="longitude" class="result-value"></span></div>
-        </div>
-        
-        <!-- Otros símbolos -->
-        <div id="distance-results-container" class="mt-6 p-4 bg-gray-800 rounded-lg hidden">
-            <h2 class="text-sm font-semibold text-blue-400 mb-3 border-b border-gray-700 pb-2 uppercase tracking-wider">Símbolos más cercanos</h2>
-            <div id="distance-list" class="space-y-2 text-sm"></div>
+        <!-- Lista de Cercanía -->
+        <div id="distance-results-container" class="mt-8 hidden">
+            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest">Símbolos en el área</h3>
+            <div id="distance-list" class="space-y-3"></div>
         </div>
 
-        <div id="error-box" class="p-3 mt-6 bg-red-800/30 text-red-400 rounded-lg hidden text-xs">
-            <span id="error-message"></span>
+        <div id="error-box" class="mt-4 p-3 bg-red-900/20 border border-red-500/50 text-red-400 text-xs rounded-lg hidden">
+            <p id="error-message"></p>
         </div>
     </div>
 
     <script>
-        // 1. DEFINICIÓN DE DATOS (Primero para evitar errores de referencia)
+        // --- 1. CONFIGURACIÓN DE DATOS ---
+        // Nota: En una app real, aquí podrías usar URLs de imágenes. 
+        // El Service Worker (abajo) se encargará de que funcionen offline.
         const STATIONS = [
-            { name: "Urutengangana", img:"img/Urutengangana.jpg", description: "Māori god of light. Eldest child of Ranginui and Papatūānuku.", lat: -41.1680009, lon: 174.0608852 },
-            { name: "Tumatauenga", img:"img/Tumatauenga.jpg", description: "God of war, hunting, and agriculture.", lat: -39.3524332, lon: 174.2214992},
-            { name: "Rūaumoko", img:"img/ruaumoko.jpg", description: "God of earthquakes and volcanoes.", lat: -42.1119642, lon: 172.6010590},
-            { name: "Rongo", img:"img/rongo.jpg", description: "God of cultivated plants and peace.", lat: -42.9150553, lon: 171.9547704},
-            { name: "Pekapeka", img:"img/pekapekamaori.jpg", description: "Māori word for bat. Only native land mammal.", lat: -37.0661338, lon: 174.8635439 },
-            { name: "Pikorua Single", img:"img/Pikorua1.jpg", description: "Symbol of eternity and joining of two people.", lat: -38.3720292, lon: 175.1396016 }
+            { 
+                name: "Urutengangana", 
+                img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80", 
+                description: "Dios de la luz. El primogénito de los dioses del cielo y la tierra.", 
+                lat: -41.1680009, lon: 174.0608852 
+            },
+            { 
+                name: "Tumatauenga", 
+                img: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=400&q=80", 
+                description: "Dios de la guerra y la caza. Patrón de las actividades humanas.", 
+                lat: -39.3524332, lon: 174.2214992
+            },
+            { 
+                name: "Rūaumoko", 
+                img: "https://images.unsplash.com/photo-1467226632440-65f0b4957563?auto=format&fit=crop&w=400&q=80", 
+                description: "Dios de los terremotos y los volcanes. El hijo más joven.", 
+                lat: -42.1119642, lon: 172.6010590
+            }
         ];
 
+        // --- 2. LÓGICA DE LA APP ---
         const btn = document.getElementById('get-location-btn');
-        const message = document.getElementById('message');
-        const resultsContainer = document.getElementById('results-container');
-        const distanceContainer = document.getElementById('distance-results-container');
-        const distanceList = document.getElementById('distance-list');
-        const errorBox = document.getElementById('error-box');
-        const errorMessage = document.getElementById('error-message');
         const matchAlert = document.getElementById('match-alert');
-        const matchedNameDisplay = document.getElementById('matched-station-name');
-        const imgItem = document.getElementById('matched-station-img');
-        const descriptionItem = document.getElementById('matched-station-description');
-        const latDisplay = document.getElementById('latitude');
-        const lonDisplay = document.getElementById('longitude');
+        const distanceList = document.getElementById('distance-list');
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
-            const toRad = (d) => d * (Math.PI / 180);
+            const toRad = d => d * Math.PI / 180;
             const dLat = toRad(lat2 - lat1);
             const dLon = toRad(lon2 - lon1);
-            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // CORRECCIÓN: Ahora recibe 'position'
         function success(position) {
-            message.classList.add('hidden');
+            document.getElementById('message').classList.add('hidden');
             btn.disabled = false;
-            btn.textContent = 'Buscar de nuevo';
-            
-            const currentLat = position.coords.latitude;
-            const currentLon = position.coords.longitude;
-            
-            latDisplay.textContent = currentLat.toFixed(6);
-            lonDisplay.textContent = currentLon.toFixed(6);
-            resultsContainer.classList.remove('hidden');
+            btn.textContent = 'BUSCAR DE NUEVO';
 
-            let matchFound = false;
-            let matchedData = null;
+            const { latitude, longitude } = position.coords;
+            let match = null;
 
-            // Calcular distancias y buscar coincidencia
-            STATIONS.forEach(station => {
-                const dist = calculateDistance(currentLat, currentLon, station.lat, station.lon);
-                station.distance = dist;
-
-                // Umbral de captura (15 metros = 0.015 km)
-                if (dist < 0.015) { 
-                    matchFound = true;
-                    matchedData = station;
-                }
+            STATIONS.forEach(s => {
+                s.distance = calculateDistance(latitude, longitude, s.lat, s.lon);
+                if (s.distance < 0.05) match = s; // Captura a 50 metros
             });
 
-            // Ordenar por cercanía (Más cercano primero)
             STATIONS.sort((a, b) => a.distance - b.distance);
 
-            // Mostrar los 3 más cercanos
+            // Renderizar lista
             distanceList.innerHTML = '';
             STATIONS.slice(0, 3).forEach(s => {
                 const item = document.createElement('div');
-                item.className = 'flex justify-between py-2 border-b border-gray-700 last:border-0';
-                item.innerHTML = `
-                    <span class="text-gray-300">🏆 ${s.name}</span>
-                    <span class="font-bold text-blue-400">${s.distance.toFixed(2)} km</span>
-                `;
+                item.className = 'flex justify-between items-center bg-gray-800/50 p-3 rounded-lg border border-gray-700';
+                item.innerHTML = `<span class="text-sm font-medium text-gray-200">${s.name}</span>
+                                 <span class="text-xs font-bold text-indigo-400">${s.distance.toFixed(2)} km</span>`;
                 distanceList.appendChild(item);
             });
-            distanceContainer.classList.remove('hidden');
+            document.getElementById('distance-results-container').classList.remove('hidden');
 
-            // Mostrar Alerta si hay captura
-            if (matchFound) {
-                matchedNameDisplay.textContent = matchedData.name;
-                imgItem.src = matchedData.img;
-                descriptionItem.textContent = matchedData.description;
+            if (match) {
+                document.getElementById('matched-station-name').textContent = match.name;
+                document.getElementById('matched-station-img').src = match.img;
+                document.getElementById('matched-station-description').textContent = match.description;
                 matchAlert.classList.remove('hidden');
                 matchAlert.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                matchAlert.classList.add('hidden');
             }
         }
 
-        function error(err) {
-            message.classList.add('hidden');
-            btn.disabled = false;
-            btn.textContent = 'Reintentar';
-            errorBox.classList.remove('hidden');
-            errorMessage.textContent = `Error: ${err.message}`;
-        }
-
-        function getLocation() {
-            matchAlert.classList.add('hidden');
-            errorBox.classList.add('hidden');
-            message.classList.remove('hidden');
+        btn.addEventListener('click', () => {
             btn.disabled = true;
-            btn.textContent = 'Localizando...';
+            btn.textContent = 'LOCALIZANDO...';
+            document.getElementById('message').classList.remove('hidden');
+            navigator.geolocation.getCurrentPosition(success, (err) => {
+                btn.disabled = false;
+                btn.textContent = 'REINTENTAR';
+                document.getElementById('message').classList.add('hidden');
+                alert("Error de GPS: " + err.message);
+            }, { enableHighAccuracy: true });
+        });
 
-            navigator.geolocation.getCurrentPosition(success, error, {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
+        // --- 3. REGISTRO DEL SERVICE WORKER (PARA MODO OFFLINE) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    const CACHE_NAME = 'moko-cache-v1';
+                    const ASSETS = [
+                        './',
+                        './index.html',
+                        'https://cdn.tailwindcss.com'
+                    ];
+
+                    self.addEventListener('install', e => {
+                        e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+                    });
+
+                    self.addEventListener('fetch', e => {
+                        e.respondWith(
+                            caches.match(e.request).then(res => {
+                                if (res) return res;
+                                return fetch(e.request).then(networkRes => {
+                                    return caches.open(CACHE_NAME).then(cache => {
+                                        // Guardamos las imágenes de Unsplash dinámicamente en caché
+                                        if (e.request.url.includes('images.unsplash.com')) {
+                                            cache.put(e.request, networkRes.clone());
+                                        }
+                                        return networkRes;
+                                    });
+                                });
+                            }).catch(() => caches.match('./index.html'))
+                        );
+                    });
+                `;
+                
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).then(() => console.log("SW Activo"));
             });
         }
-
-        btn.addEventListener('click', getLocation);
     </script>
 </body>
 </html>
