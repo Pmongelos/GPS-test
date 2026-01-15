@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To Moko Offline Collector</title>
+    <title>To Moko Collector - Manual & GPS</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -12,29 +12,58 @@
         .card { background-color: #161b22; border: 1px solid #30363d; }
         .moko-img-container { position: relative; width: 100%; height: 200px; background: #010409; border-radius: 8px; overflow: hidden; }
         #matched-station-img { width: 100%; height: 100%; object-fit: cover; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
 
-    <div id="app" class="card p-6 w-full max-w-sm mx-auto rounded-xl shadow-2xl">
+    <div id="app" class="card p-6 w-full max-w-sm mx-auto rounded-xl shadow-2xl border border-gray-700">
         <header class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-white">To Moko Collector</h1>
-            <p class="text-xs text-gray-400">Captura símbolos Maorí incluso sin internet</p>
+            <h1 class="text-2xl font-bold text-white uppercase tracking-tighter">To Moko Collector</h1>
+            <p class="text-xs text-gray-400">Captura símbolos Maorí en cualquier lugar</p>
         </header>
 
-        <button id="get-location-btn" class="w-full py-4 px-4 mb-6 rounded-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg active:scale-95 transition-all">
-            BUSCAR SÍMBOLOS
-        </button>
+        <!-- Selección de Modo -->
+        <div class="flex mb-6 bg-gray-900 p-1 rounded-lg">
+            <button id="mode-gps-btn" class="flex-1 py-2 text-xs font-bold rounded-md bg-indigo-600 text-white transition-all">GPS</button>
+            <button id="mode-manual-btn" class="flex-1 py-2 text-xs font-bold rounded-md text-gray-400 hover:text-white transition-all">MANUAL</button>
+        </div>
+
+        <!-- Sección GPS -->
+        <div id="gps-section">
+            <button id="get-location-btn" class="w-full py-4 px-4 mb-4 rounded-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg active:scale-95 transition-all">
+                BUSCAR POR GPS
+            </button>
+        </div>
+
+        <!-- Sección Manual -->
+        <div id="manual-section" class="hidden space-y-3 mb-6">
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-[10px] text-gray-500 uppercase font-bold mb-1 ml-1">Latitud</label>
+                    <input type="number" id="input-lat" step="any" placeholder="-37.1234" 
+                           class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none text-white">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-gray-500 uppercase font-bold mb-1 ml-1">Longitud</label>
+                    <input type="number" id="input-lon" step="any" placeholder="174.5678" 
+                           class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none text-white">
+                </div>
+            </div>
+            <button id="manual-search-btn" class="w-full py-3 px-4 rounded-lg font-bold bg-gray-700 hover:bg-gray-600 text-white transition-all">
+                COMPARAR COORDENADAS
+            </button>
+        </div>
 
         <div id="message" class="text-center text-sm mb-4 text-yellow-500 hidden italic">
-            Conectando con los espíritus (GPS)...
+            Procesando ubicación...
         </div>
 
         <!-- Alerta de Captura -->
         <div id="match-alert" class="mt-4 p-4 bg-green-900/30 border border-green-500/50 rounded-xl hidden">
             <div class="flex items-center justify-center mb-2">
-                <span class="text-2xl mr-2">✨</span>
-                <p class="font-bold text-green-400 uppercase tracking-widest text-sm">¡Moko Capturado!</p>
+                <span class="text-2xl mr-2">🗿</span>
+                <p class="font-bold text-green-400 uppercase tracking-widest text-sm text-center leading-none">¡Moko Capturado!</p>
             </div>
             <h2 id="matched-station-name" class="text-center text-xl font-bold text-white mb-3"></h2>
             
@@ -47,65 +76,57 @@
 
         <!-- Lista de Cercanía -->
         <div id="distance-results-container" class="mt-8 hidden">
-            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest">Símbolos en el área</h3>
-            <div id="distance-list" class="space-y-3"></div>
+            <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 tracking-widest border-b border-gray-800 pb-2">Símbolos más cercanos</h3>
+            <div id="distance-list" class="space-y-2 text-sm"></div>
         </div>
 
-        <div id="error-box" class="mt-4 p-3 bg-red-900/20 border border-red-500/50 text-red-400 text-xs rounded-lg hidden">
+        <div id="error-box" class="mt-4 p-3 bg-red-900/20 border border-red-500/50 text-red-400 text-[10px] rounded-lg hidden">
             <p id="error-message"></p>
         </div>
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN DE DATOS ---
-        // Nota: En una app real, aquí podrías usar URLs de imágenes. 
-        // El Service Worker (abajo) se encargará de que funcionen offline.
+        // --- 1. DATOS DE ESTACIONES ---
         const STATIONS = [
-            { 
-                name: "Urutengangana", 
-                img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80", 
-                description: "Dios de la luz. El primogénito de los dioses del cielo y la tierra.", 
-                lat: -41.1680009, lon: 174.0608852 
-            },
-            { 
-                name: "Tumatauenga", 
-                img: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=400&q=80", 
-                description: "Dios de la guerra y la caza. Patrón de las actividades humanas.", 
-                lat: -39.3524332, lon: 174.2214992
-            },
-            { 
-                name: "Rūaumoko", 
-                img: "https://images.unsplash.com/photo-1467226632440-65f0b4957563?auto=format&fit=crop&w=400&q=80", 
-                description: "Dios de los terremotos y los volcanes. El hijo más joven.", 
-                lat: -42.1119642, lon: 172.6010590
-            }
+            { name: "Urutengangana", img: "img/Urutengangana.jpg", description: "Dios de la luz. El primogénito de los dioses del cielo y la tierra.", lat: -41.1680009, lon: 174.0608852 },
+            { name: "Tumatauenga", img: "img/Tumatauenga.jpg", description: "Dios de la guerra y la caza. Patrón de las actividades humanas.", lat: -39.3524332, lon: 174.2214992},
+            { name: "Rūaumoko", img: "img/ruaumoko.jpg", description: "Dios de los terremotos y los volcanes. El hijo más joven.", lat: -42.1119642, lon: 172.6010590},
+            { name: "Pekapeka", img: "img/pekapekamaori.jpg", description: "Palabra maorí para murciélago. Único mamífero terrestre nativo.", lat: -37.0661338, lon: 174.8635439 },
+            { name: "Rongo", img: "img/rongo.jpg", description: "Dios de las plantas cultivadas y la agricultura.", lat: -42.9150553, lon: 171.9547704}
         ];
 
-        // --- 2. LÓGICA DE LA APP ---
-        const btn = document.getElementById('get-location-btn');
+        // --- 2. SELECTORES ---
+        const btnGps = document.getElementById('get-location-btn');
+        const btnManual = document.getElementById('manual-search-btn');
+        const modeGpsBtn = document.getElementById('mode-gps-btn');
+        const modeManualBtn = document.getElementById('mode-manual-btn');
+        const gpsSection = document.getElementById('gps-section');
+        const manualSection = document.getElementById('manual-section');
         const matchAlert = document.getElementById('match-alert');
         const distanceList = document.getElementById('distance-list');
+        const message = document.getElementById('message');
+        const errorBox = document.getElementById('error-box');
 
+        // --- 3. LÓGICA DE CÁLCULO ---
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const toRad = d => d * Math.PI / 180;
             const dLat = toRad(lat2 - lat1);
             const dLon = toRad(lon2 - lon1);
             const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
-        function success(position) {
-            document.getElementById('message').classList.add('hidden');
-            btn.disabled = false;
-            btn.textContent = 'BUSCAR DE NUEVO';
-
-            const { latitude, longitude } = position.coords;
+        function processLocation(lat, lon) {
+            message.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            
             let match = null;
+            const CAPTURE_THRESHOLD = 0.05; // 50 metros
 
             STATIONS.forEach(s => {
-                s.distance = calculateDistance(latitude, longitude, s.lat, s.lon);
-                if (s.distance < 0.05) match = s; // Captura a 50 metros
+                s.distance = calculateDistance(lat, lon, s.lat, s.lon);
+                if (s.distance < CAPTURE_THRESHOLD) match = s;
             });
 
             STATIONS.sort((a, b) => a.distance - b.distance);
@@ -114,9 +135,9 @@
             distanceList.innerHTML = '';
             STATIONS.slice(0, 3).forEach(s => {
                 const item = document.createElement('div');
-                item.className = 'flex justify-between items-center bg-gray-800/50 p-3 rounded-lg border border-gray-700';
-                item.innerHTML = `<span class="text-sm font-medium text-gray-200">${s.name}</span>
-                                 <span class="text-xs font-bold text-indigo-400">${s.distance.toFixed(2)} km</span>`;
+                item.className = 'flex justify-between items-center bg-gray-800/30 p-2 rounded border border-gray-800';
+                item.innerHTML = `<span class="text-xs text-gray-300">${s.name}</span>
+                                 <span class="text-xs font-mono text-indigo-400 font-bold">${s.distance.toFixed(2)} km</span>`;
                 distanceList.appendChild(item);
             });
             document.getElementById('distance-results-container').classList.remove('hidden');
@@ -127,60 +148,84 @@
                 document.getElementById('matched-station-description').textContent = match.description;
                 matchAlert.classList.remove('hidden');
                 matchAlert.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                matchAlert.classList.add('hidden');
             }
         }
 
-        btn.addEventListener('click', () => {
-            btn.disabled = true;
-            btn.textContent = 'LOCALIZANDO...';
-            document.getElementById('message').classList.remove('hidden');
-            navigator.geolocation.getCurrentPosition(success, (err) => {
-                btn.disabled = false;
-                btn.textContent = 'REINTENTAR';
-                document.getElementById('message').classList.add('hidden');
-                alert("Error de GPS: " + err.message);
-            }, { enableHighAccuracy: true });
+        // --- 4. EVENTOS ---
+        modeGpsBtn.addEventListener('click', () => {
+            gpsSection.classList.remove('hidden');
+            manualSection.classList.add('hidden');
+            modeGpsBtn.className = "flex-1 py-2 text-xs font-bold rounded-md bg-indigo-600 text-white transition-all";
+            modeManualBtn.className = "flex-1 py-2 text-xs font-bold rounded-md text-gray-400 hover:text-white transition-all";
         });
 
-        // --- 3. REGISTRO DEL SERVICE WORKER (PARA MODO OFFLINE) ---
+        modeManualBtn.addEventListener('click', () => {
+            manualSection.classList.remove('hidden');
+            gpsSection.classList.add('hidden');
+            modeManualBtn.className = "flex-1 py-2 text-xs font-bold rounded-md bg-indigo-600 text-white transition-all";
+            modeGpsBtn.className = "flex-1 py-2 text-xs font-bold rounded-md text-gray-400 hover:text-white transition-all";
+        });
+
+        btnGps.addEventListener('click', () => {
+            message.classList.remove('hidden');
+            btnGps.disabled = true;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    btnGps.disabled = false;
+                    processLocation(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    btnGps.disabled = false;
+                    message.classList.add('hidden');
+                    errorBox.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = "Error GPS: " + err.message;
+                },
+                { enableHighAccuracy: true }
+            );
+        });
+
+        btnManual.addEventListener('click', () => {
+            const lat = parseFloat(document.getElementById('input-lat').value);
+            const lon = parseFloat(document.getElementById('input-lon').value);
+
+            if (isNaN(lat) || isNaN(lon)) {
+                errorBox.classList.remove('hidden');
+                document.getElementById('error-message').textContent = "Por favor, introduce coordenadas válidas.";
+                return;
+            }
+
+            processLocation(lat, lon);
+        });
+
+        // --- 5. SERVICE WORKER ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    const CACHE_NAME = 'moko-cache-v1';
-                    const ASSETS = [
-                        './',
-                        './index.html',
-                        'https://cdn.tailwindcss.com'
-                    ];
-
-                    self.addEventListener('install', e => {
-                        e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
-                    });
-
+                    const CACHE_NAME = 'moko-v3';
+                    const ASSETS = ['./', './index.html', 'https://cdn.tailwindcss.com'];
+                    self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS))));
                     self.addEventListener('fetch', e => {
-                        e.respondWith(
-                            caches.match(e.request).then(res => {
-                                if (res) return res;
-                                return fetch(e.request).then(networkRes => {
-                                    return caches.open(CACHE_NAME).then(cache => {
-                                        // Guardamos las imágenes de Unsplash dinámicamente en caché
-                                        if (e.request.url.includes('images.unsplash.com')) {
-                                            cache.put(e.request, networkRes.clone());
-                                        }
-                                        return networkRes;
-                                    });
-                                });
-                            }).catch(() => caches.match('./index.html'))
-                        );
+                        e.respondWith(caches.match(e.request).then(res => {
+                            if (res) return res;
+                            return fetch(e.request).then(netRes => {
+                                if (e.request.url.includes('/img/')) {
+                                    const clone = netRes.clone();
+                                    caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+                                }
+                                return netRes;
+                            });
+                        }));
                     });
                 `;
-                
                 const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).then(() => console.log("SW Activo"));
+                navigator.serviceWorker.register(URL.createObjectURL(blob));
             });
         }
     </script>
 </body>
 </html>
+
+
 
