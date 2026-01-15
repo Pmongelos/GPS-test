@@ -3,203 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To Moko - Modo Avión Certificado</title>
-    <!-- Intentamos cargar Tailwind, pero el SW lo interceptará -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>To Moko - Ultra Ligero</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; -webkit-tap-highlight-color: transparent; }
-        .card { background-color: #161b22; border: 1px solid #30363d; }
-        .radar-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 0; }
+        /* Estilos Base - Reemplazo de Tailwind para funcionamiento offline total */
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --primary: #4f46e5;
+            --primary-hover: #6366f1;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+            --success: #238636;
         }
-        .moko-img-container { position: relative; width: 100%; height: 200px; background: #010409; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #30363d; }
-        #matched-station-img { width: 100%; height: 100%; object-fit: cover; }
-        .tab-btn { position: relative; transition: all 0.2s; }
-        .tab-active { color: #818cf8; }
-        .tab-active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 2px; background: #818cf8; }
-        .btn-primary { background-color: #4f46e5; transition: background 0.2s; }
-        .btn-primary:disabled { background-color: #312e81; opacity: 0.6; }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 360px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Utilidades */
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+
+        /* Badge de Estado */
+        .badge {
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .badge-loading { background: rgba(255, 165, 0, 0.1); color: orange; }
+        .badge-ready { background: rgba(35, 134, 54, 0.1); color: #4ade80; border-color: rgba(74, 222, 128, 0.2); }
+
+        /* Navegación */
+        nav { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .nav-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            padding: 12px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+        }
+        .nav-btn.active { color: var(--primary-hover); }
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 20%;
+            width: 60%;
+            height: 2px;
+            background: var(--primary-hover);
+        }
+
+        /* Botones */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:active { transform: scale(0.98); background: var(--primary-hover); }
+        .btn-secondary { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+
+        /* Inputs */
+        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        input {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        /* Radar */
+        .radar-container { padding: 30px 0; display: flex; flex-direction: column; items-center: center; text-align: center; }
+        .circle {
+            width: 80px;
+            height: 80px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        .pulse {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: pulse-anim 2s infinite;
+        }
+        @keyframes pulse-anim {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        /* Imágenes */
+        .moko-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: #010409;
+            margin-bottom: 12px;
+        }
+
+        /* Colección */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .thumb {
+            background: #21262d;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .thumb img { width: 100%; height: 60px; object-fit: cover; border-radius: 6px; }
+        .thumb p { font-size: 9px; margin: 5px 0 0; font-weight: bold; }
     </style>
 </head>
-<body class="p-4 flex items-center justify-center min-h-screen">
+<body>
 
-    <div id="app" class="card p-6 w-full max-w-sm mx-auto rounded-2xl shadow-2xl relative overflow-hidden">
-        
-        <!-- Header & Status -->
-        <div class="flex justify-between items-center mb-4">
-            <div id="status-badge" class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[9px] font-bold border border-blue-500/30 uppercase">Iniciando...</div>
-            <span id="connection-status" class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Online</span>
+    <div class="card">
+        <div class="flex justify-between items-center mb-6">
+            <div id="status" class="badge badge-loading">Sincronizando...</div>
+            <div id="conn" style="font-size: 8px; color: #555;">ONLINE</div>
         </div>
 
-        <!-- Navegación Principal (Siempre funcional) -->
-        <nav class="flex border-b border-gray-800 mb-6">
-            <button id="tab-scanner-btn" class="flex-1 py-3 text-xs font-bold tab-btn tab-active">ESCÁNER</button>
-            <button id="tab-collection-btn" class="flex-1 py-3 text-xs font-bold tab-btn text-gray-500">COLECCIÓN (<span id="unlocked-count">0</span>)</button>
+        <nav>
+            <button id="tab-scan" class="nav-btn active">ESCÁNER</button>
+            <button id="tab-coll" class="nav-btn">COLECCIÓN (<span id="count">0</span>)</button>
         </nav>
 
-        <!-- SECCIÓN: ESCÁNER -->
-        <div id="section-scanner">
-            <div id="scanner-ui-content">
-                <header class="text-center mb-8">
-                    <h1 class="text-3xl font-black text-white tracking-tighter italic uppercase">To Moko</h1>
-                    <p class="text-[10px] text-gray-500 uppercase tracking-widest">Sistema de Rastreo Offline</p>
-                </header>
-
-                <!-- Pantalla Radar -->
-                <div id="radar-screen" class="hidden flex flex-col items-center justify-center py-6">
-                    <div class="relative w-32 h-32 mb-6">
-                        <div class="absolute inset-0 border-2 border-indigo-500/30 rounded-full"></div>
-                        <div class="absolute inset-0 border-2 border-indigo-500/50 rounded-full radar-pulse"></div>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <svg class="w-10 h-10 text-indigo-500 animate-spin" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <p class="text-indigo-400 font-bold text-xs animate-pulse tracking-widest">ESCANEANDO SEÑAL...</p>
+        <!-- ESCÁNER -->
+        <div id="view-scan">
+            <div id="ui-main">
+                <div class="text-center mb-6">
+                    <h1 style="margin:0; font-style: italic; letter-spacing: -1px;">TO MOKO</h1>
+                    <p style="font-size: 9px; color: var(--text-dim); margin-top: 4px; letter-spacing: 2px;">RECEPTOR DE COORDENADAS</p>
                 </div>
 
-                <!-- Controles Principales -->
-                <div id="input-controls" class="space-y-6">
-                    <div class="flex bg-gray-900/50 p-1 rounded-xl border border-gray-800">
-                        <button id="mode-gps-btn" class="flex-1 py-2 text-[10px] font-bold rounded-lg bg-indigo-600 text-white transition-all">GPS</button>
-                        <button id="mode-manual-btn" class="flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-500 hover:text-white transition-all">MANUAL</button>
-                    </div>
-
-                    <div id="gps-section">
-                        <button id="get-location-btn" class="btn-primary w-full py-4 rounded-xl font-bold text-white shadow-lg active:scale-95 uppercase text-xs tracking-widest">Escaneo Satelital</button>
-                    </div>
-
-                    <div id="manual-section" class="hidden space-y-3">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="number" id="input-lat" step="any" placeholder="Latitud" class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-xs text-white outline-none focus:border-indigo-500">
-                            <input type="number" id="input-lon" step="any" placeholder="Longitud" class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-xs text-white outline-none focus:border-indigo-500">
-                        </div>
-                        <button id="manual-search-btn" class="w-full py-3 rounded-lg font-bold bg-gray-700 hover:bg-gray-600 text-white text-xs uppercase transition-colors">Comparar Coordenadas</button>
-                    </div>
+                <div class="input-group" style="background: #010409; padding: 4px; border-radius: 10px; margin-bottom: 20px;">
+                    <button id="mode-gps" class="nav-btn active" style="padding: 8px; border-radius: 7px; background: var(--primary);">GPS</button>
+                    <button id="mode-man" class="nav-btn" style="padding: 8px;">MANUAL</button>
                 </div>
 
-                <!-- Hallazgo -->
-                <div id="match-alert" class="mt-6 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl hidden">
-                    <h2 id="matched-station-name" class="text-xl font-black text-white mb-3 italic uppercase"></h2>
-                    <div class="moko-img-container mb-3">
-                        <img id="matched-station-img" src="" alt="Moko">
-                    </div>
-                    <p id="matched-station-description" class="text-[10px] text-gray-300 italic leading-tight"></p>
+                <div id="gps-box">
+                    <button id="btn-gps" class="btn btn-primary">Escaneo Satelital</button>
                 </div>
 
-                <div id="distance-results-container" class="mt-6 hidden">
-                    <div id="distance-list" class="space-y-2"></div>
+                <div id="manual-box" class="hidden">
+                    <div class="input-group">
+                        <input type="number" id="lat" placeholder="Latitud" step="any">
+                        <input type="number" id="lon" placeholder="Longitud" step="any">
+                    </div>
+                    <button id="btn-man" class="btn btn-secondary">Rastreo Manual</button>
                 </div>
+            </div>
+
+            <!-- Radar Animación -->
+            <div id="ui-radar" class="radar-container hidden">
+                <div class="circle">
+                    <div class="pulse"></div>
+                    <div class="pulse" style="animation-delay: 1s"></div>
+                </div>
+                <p style="font-size: 10px; color: var(--primary-hover); font-weight: bold; letter-spacing: 2px;">BUSCANDO SEÑAL...</p>
+                <p id="coords-log" style="font-size: 8px; font-family: monospace; color: #444; margin-top: 10px;"></p>
+            </div>
+
+            <!-- Resultado -->
+            <div id="ui-match" class="mt-4 hidden" style="padding: 15px; background: rgba(79, 70, 229, 0.05); border-radius: 15px; border: 1px solid rgba(79, 70, 229, 0.2);">
+                <h2 id="m-name" style="margin: 0 0 10px 0; font-size: 18px; font-style: italic; color: white;"></h2>
+                <img id="m-img" class="moko-img" src="" alt="">
+                <p id="m-desc" style="font-size: 10px; color: var(--text-dim); line-height: 1.4; margin: 0;"></p>
+            </div>
+            
+            <div id="ui-near" class="mt-4 hidden">
+                <p style="font-size: 8px; font-weight: bold; color: #444; margin-bottom: 8px; text-transform: uppercase;">Señales próximas:</p>
+                <div id="near-list"></div>
             </div>
         </div>
 
-        <!-- SECCIÓN: COLECCIÓN -->
-        <div id="section-collection" class="hidden">
-            <h2 class="text-xl font-black text-white mb-4 italic uppercase tracking-tighter">Colección</h2>
-            <div id="collection-grid" class="grid grid-cols-2 gap-3 pb-4"></div>
-            <div id="empty-collection" class="text-center py-10 hidden">
-                <p class="text-xs text-gray-500 italic">No hay Mokos en tu base de datos.</p>
-                <p class="text-[9px] text-gray-600 mt-2">Explora el mapa para encontrarlos.</p>
-            </div>
+        <!-- COLECCIÓN -->
+        <div id="view-coll" class="hidden">
+            <h2 style="font-size: 18px; margin-bottom: 15px; font-style: italic;">HISTORIAL</h2>
+            <div id="coll-grid" class="grid"></div>
+            <p id="coll-empty" style="font-size: 11px; color: #444; text-align: center; margin-top: 40px;">Tu base de datos está vacía.</p>
         </div>
-
     </div>
 
     <div id="preloader" style="display:none"></div>
 
     <script>
-        // --- DATA & CONFIG ---
+        // DATA
         const STATIONS = [
-            { id: "uru", name: "Urutengangana", img: "img/Urutengangana.jpg", description: "Dios de la luz original y el conocimiento.", lat: -41.168, lon: 174.060 },
-            { id: "tum", name: "Tumatauenga", img: "img/Tumatauenga.jpg", description: "Dios de la guerra y la estrategia humana.", lat: -39.352, lon: 174.221 },
-            { id: "rua", name: "Rūaumoko", img: "img/ruaumoko.jpg", description: "Dios de los movimientos de la tierra.", lat: -42.111, lon: 172.601 },
-            { id: "pek", name: "Pekapeka", img: "img/pekapekamaori.jpg", description: "Espíritu alado de los bosques antiguos.", lat: -37.066, lon: 174.863 },
-            { id: "ron", name: "Rongo", img: "img/rongo.jpg", description: "Dios de la paz y las artes agrícolas.", lat: -42.915, lon: 171.954 }
+            { id: "u1", name: "Urutengangana", img: "img/Urutengangana.jpg", desc: "Dios de la luz original y el conocimiento.", lat: -41.168, lon: 174.060 },
+            { id: "t1", name: "Tumatauenga", img: "img/Tumatauenga.jpg", desc: "Dios de la guerra y la estrategia humana.", lat: -39.352, lon: 174.221 },
+            { id: "r1", name: "Rūaumoko", img: "img/ruaumoko.jpg", desc: "Dios de los movimientos de la tierra.", lat: -42.111, lon: 172.601 },
+            { id: "p1", name: "Pekapeka", img: "img/pekapekamaori.jpg", desc: "Espíritu alado de los bosques antiguos.", lat: -37.066, lon: 174.863 },
+            { id: "ro1", name: "Rongo", img: "img/rongo.jpg", desc: "Dios de la paz y las artes agrícolas.", lat: -42.915, lon: 171.954 }
         ];
 
-        let unlockedIds = JSON.parse(localStorage.getItem('unlocked_mokos') || '[]');
+        let unlocked = JSON.parse(localStorage.getItem('moko_saved') || '[]');
 
-        // --- UI GESTIÓN ---
-        const ui = {
-            status: document.getElementById('status-badge'),
-            conn: document.getElementById('connection-status'),
-            scanner: document.getElementById('section-scanner'),
-            collection: document.getElementById('section-collection'),
-            tabScanner: document.getElementById('tab-scanner-btn'),
-            tabCollection: document.getElementById('tab-collection-btn'),
-            radar: document.getElementById('radar-screen'),
-            controls: document.getElementById('input-controls'),
-            match: document.getElementById('match-alert')
+        // DOM
+        const views = {
+            scan: document.getElementById('view-scan'),
+            coll: document.getElementById('view-coll'),
+            main: document.getElementById('ui-main'),
+            radar: document.getElementById('ui-radar'),
+            match: document.getElementById('ui-match'),
+            near: document.getElementById('ui-near')
         };
 
-        // Navegación de pestañas (Debe ser instantánea)
-        function switchTab(isScanner) {
-            ui.scanner.classList.toggle('hidden', !isScanner);
-            ui.collection.classList.toggle('hidden', isScanner);
-            ui.tabScanner.className = `flex-1 py-3 text-xs font-bold tab-btn ${isScanner ? 'tab-active' : 'text-gray-500'}`;
-            ui.tabCollection.className = `flex-1 py-3 text-xs font-bold tab-btn ${!isScanner ? 'tab-active' : 'text-gray-500'}`;
-            if (!isScanner) renderCollection();
+        // NAVEGACIÓN
+        function setTab(tab) {
+            const isScan = tab === 'scan';
+            views.scan.classList.toggle('hidden', !isScan);
+            views.coll.classList.toggle('hidden', isScan);
+            document.getElementById('tab-scan').classList.toggle('active', isScan);
+            document.getElementById('tab-coll').classList.toggle('active', !isScan);
+            if(!isScan) renderColl();
         }
+        document.getElementById('tab-scan').onclick = () => setTab('scan');
+        document.getElementById('tab-coll').onclick = () => setTab('coll');
 
-        ui.tabScanner.onclick = () => switchTab(true);
-        ui.tabCollection.onclick = () => switchTab(false);
+        document.getElementById('mode-gps').onclick = () => {
+            document.getElementById('gps-box').classList.remove('hidden');
+            document.getElementById('manual-box').classList.add('hidden');
+            document.getElementById('mode-gps').style.background = 'var(--primary)';
+            document.getElementById('mode-man').style.background = 'none';
+        };
+        document.getElementById('mode-man').onclick = () => {
+            document.getElementById('manual-box').classList.remove('hidden');
+            document.getElementById('gps-box').classList.add('hidden');
+            document.getElementById('mode-man').style.background = 'var(--primary)';
+            document.getElementById('mode-gps').style.background = 'none';
+        };
 
-        // --- LÓGICA DE NEGOCIO ---
-        function renderCollection() {
-            const grid = document.getElementById('collection-grid');
-            const empty = document.getElementById('empty-collection');
-            grid.innerHTML = '';
-            document.getElementById('unlocked-count').textContent = unlockedIds.length;
+        // LÓGICA
+        async function runScan(lat, lon) {
+            views.main.classList.add('hidden');
+            views.match.classList.add('hidden');
+            views.near.classList.add('hidden');
+            views.radar.classList.remove('hidden');
+            document.getElementById('coords-log').textContent = `LAT: ${lat.toFixed(3)} | LON: ${lon.toFixed(3)}`;
 
-            if (unlockedIds.length === 0) {
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-
-            unlockedIds.forEach(id => {
-                const m = STATIONS.find(s => s.id === id);
-                if (m) {
-                    const el = document.createElement('div');
-                    el.className = "bg-gray-900/60 p-2 rounded-xl border border-gray-800 cursor-pointer active:scale-95 transition-transform";
-                    el.onclick = () => {
-                        switchTab(true);
-                        showMatch(m);
-                    };
-                    el.innerHTML = `
-                        <img src="${m.img}" class="w-full h-16 object-cover rounded-lg mb-2 opacity-80">
-                        <p class="text-[8px] font-bold text-center uppercase text-indigo-300">${m.name}</p>
-                    `;
-                    grid.appendChild(el);
-                }
-            });
-        }
-
-        function showMatch(m) {
-            document.getElementById('matched-station-name').textContent = m.name;
-            document.getElementById('matched-station-img').src = m.img;
-            document.getElementById('matched-station-description').textContent = m.description;
-            ui.match.classList.remove('hidden');
-            ui.match.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        async function triggerRadar(lat, lon) {
-            ui.controls.classList.add('hidden');
-            ui.match.classList.add('hidden');
-            document.getElementById('distance-results-container').classList.add('hidden');
-            ui.radar.classList.remove('hidden');
-
-            // Simulación de escaneo
             await new Promise(r => setTimeout(r, 3000));
 
-            ui.radar.classList.add('hidden');
-            ui.controls.classList.remove('hidden');
+            views.radar.classList.add('hidden');
+            views.main.classList.remove('hidden');
 
             const R = 6371;
             STATIONS.forEach(s => {
@@ -210,123 +302,96 @@
             });
 
             STATIONS.sort((a,b) => a.dist - b.dist);
-            const nearest = STATIONS[0];
+            const win = STATIONS[0];
 
-            if (nearest.dist < 0.05) {
-                if (!unlockedIds.includes(nearest.id)) {
-                    unlockedIds.push(nearest.id);
-                    localStorage.setItem('unlocked_mokos', JSON.stringify(unlockedIds));
-                    document.getElementById('unlocked-count').textContent = unlockedIds.length;
+            if(win.dist < 0.05) {
+                if(!unlocked.includes(win.id)) {
+                    unlocked.push(win.id);
+                    localStorage.setItem('moko_saved', JSON.stringify(unlocked));
+                    document.getElementById('count').textContent = unlocked.length;
                 }
-                showMatch(nearest);
+                showMoko(win);
             } else {
-                // Mostrar solo distancias
-                const list = document.getElementById('distance-list');
+                views.near.classList.remove('hidden');
+                const list = document.getElementById('near-list');
                 list.innerHTML = '';
                 STATIONS.slice(0,2).forEach(s => {
-                    const d = document.createElement('div');
-                    d.className = "flex justify-between text-[9px] p-2 bg-gray-900/30 rounded border border-gray-800";
-                    d.innerHTML = `<span>${s.name}</span><span class="text-indigo-400">${s.dist.toFixed(2)}km</span>`;
-                    list.appendChild(d);
+                    const row = document.createElement('div');
+                    row.style = "display:flex; justify-content:space-between; font-size:9px; padding:5px 0; border-bottom:1px solid #222;";
+                    row.innerHTML = `<span>${s.name}</span><span style="color:var(--primary-hover)">${s.dist.toFixed(2)}km</span>`;
+                    list.appendChild(row);
                 });
-                document.getElementById('distance-results-container').classList.remove('hidden');
             }
         }
 
-        // --- BOTONES ---
-        document.getElementById('get-location-btn').onclick = () => {
-            const btn = document.getElementById('get-location-btn');
-            btn.disabled = true;
-            btn.textContent = "Buscando GPS...";
-            
-            navigator.geolocation.getCurrentPosition(
-                p => {
-                    btn.disabled = false;
-                    btn.textContent = "Escaneo Satelital";
-                    triggerRadar(p.coords.latitude, p.coords.longitude);
-                },
-                err => {
-                    btn.disabled = false;
-                    btn.textContent = "Error GPS (Offline)";
-                    // En modo avión el GPS puede fallar, permitimos que el usuario use Manual
-                    console.warn(err);
-                },
-                { timeout: 5000 }
-            );
-        };
+        function showMoko(m) {
+            document.getElementById('m-name').textContent = m.name;
+            document.getElementById('m-img').src = m.img;
+            document.getElementById('m-desc').textContent = m.desc;
+            views.match.classList.remove('hidden');
+            views.match.scrollIntoView({ behavior: 'smooth' });
+        }
 
-        document.getElementById('manual-search-btn').onclick = () => {
-            const la = parseFloat(document.getElementById('input-lat').value);
-            const lo = parseFloat(document.getElementById('input-lon').value);
-            if (!isNaN(la) && !isNaN(lo)) triggerRadar(la, lo);
-        };
-
-        document.getElementById('mode-gps-btn').onclick = () => {
-            document.getElementById('gps-section').classList.remove('hidden');
-            document.getElementById('manual-section').classList.add('hidden');
-            document.getElementById('mode-gps-btn').className = "flex-1 py-2 text-[10px] font-bold rounded-lg bg-indigo-600 text-white";
-            document.getElementById('mode-manual-btn').className = "flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-500";
-        };
-
-        document.getElementById('mode-manual-btn').onclick = () => {
-            document.getElementById('manual-section').classList.remove('hidden');
-            document.getElementById('gps-section').classList.add('hidden');
-            document.getElementById('mode-manual-btn').className = "flex-1 py-2 text-[10px] font-bold rounded-lg bg-indigo-600 text-white";
-            document.getElementById('mode-gps-btn').className = "flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-500";
-        };
-
-        // --- ONLINE/OFFLINE DETECTION ---
-        window.addEventListener('online', () => ui.conn.textContent = "Online");
-        window.addEventListener('offline', () => ui.conn.textContent = "Offline");
-        if (!navigator.onLine) ui.conn.textContent = "Offline";
-
-        // --- SERVICE WORKER & PRELOAD ---
-        window.onload = () => {
-            document.getElementById('unlocked-count').textContent = unlockedIds.length;
-            
-            // Forzar carga de imágenes
-            const pre = document.getElementById('preloader');
-            STATIONS.forEach(s => {
-                const i = new Image();
-                i.src = s.img;
-                pre.appendChild(i);
+        function renderColl() {
+            const grid = document.getElementById('coll-grid');
+            const empty = document.getElementById('coll-empty');
+            grid.innerHTML = '';
+            document.getElementById('count').textContent = unlocked.length;
+            if(unlocked.length === 0) { empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            unlocked.forEach(id => {
+                const m = STATIONS.find(s => s.id === id);
+                if(m) {
+                    const d = document.createElement('div');
+                    d.className = 'thumb';
+                    d.onclick = () => { setTab('scan'); showMoko(m); };
+                    d.innerHTML = `<img src="${m.img}"><p>${m.name.toUpperCase()}</p>`;
+                    grid.appendChild(d);
+                }
             });
+        }
+
+        // EVENTOS
+        document.getElementById('btn-gps').onclick = () => {
+            navigator.geolocation.getCurrentPosition(p => runScan(p.coords.latitude, p.coords.longitude), 
+            () => { document.getElementById('btn-gps').textContent = "ERROR GPS"; setTimeout(()=>document.getElementById('btn-gps').textContent="Escaneo Satelital", 2000); });
+        };
+        document.getElementById('btn-man').onclick = () => {
+            const la = parseFloat(document.getElementById('lat').value);
+            const lo = parseFloat(document.getElementById('lon').value);
+            if(!isNaN(la)) runScan(la, lo);
+        };
+
+        // SW & INIT
+        window.onload = () => {
+            document.getElementById('count').textContent = unlocked.length;
+            const pre = document.getElementById('preloader');
+            STATIONS.forEach(s => { const i = new Image(); i.src = s.img; pre.appendChild(i); });
 
             if ('serviceWorker' in navigator) {
                 const sw = `
-                const CACHE_NAME = 'moko-ultimate-v7';
-                const FILES = ['./', './index.html', 'https://cdn.tailwindcss.com'];
-                
-                self.addEventListener('install', e => {
-                    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(FILES)));
-                    self.skipWaiting();
-                });
-
-                self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-
-                self.addEventListener('fetch', e => {
-                    e.respondWith(
-                        caches.match(e.request).then(cached => {
-                            if (cached) return cached;
-                            return fetch(e.request).then(res => {
-                                if (e.request.url.includes('img/') || e.request.url.includes('cdn')) {
-                                    const cl = res.clone();
-                                    caches.open(CACHE_NAME).then(c => c.put(e.request, cl));
-                                }
-                                return res;
-                            }).catch(() => caches.match('./index.html'));
-                        })
-                    );
-                });`;
+                const NAME = 'moko-lite-v1';
+                self.addEventListener('install', e => e.waitUntil(caches.open(NAME).then(c => c.add('./index.html'))));
+                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+                    if(e.request.url.includes('img/')) {
+                        const cl = res.clone();
+                        caches.open(NAME).then(c => c.put(e.request, cl));
+                    }
+                    return res;
+                }))));`;
                 const b = new Blob([sw], {type: 'text/javascript'});
                 navigator.serviceWorker.register(URL.createObjectURL(b)).then(() => {
-                    ui.status.textContent = "Sistema Blindado Offline";
-                    ui.status.className = "px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[9px] font-bold border border-green-500/30 uppercase";
+                    const s = document.getElementById('status');
+                    s.textContent = "SISTEMA LISTO";
+                    s.className = "badge badge-ready";
                 });
             }
         };
+
+        window.addEventListener('online', () => document.getElementById('conn').textContent = "ONLINE");
+        window.addEventListener('offline', () => document.getElementById('conn').textContent = "OFFLINE");
     </script>
 </body>
 </html>
 
-
+    
