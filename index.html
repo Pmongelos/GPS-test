@@ -3,115 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Localizador GPS y Distancia</title>
-    
-    <!-- ENLACE A MANIFEST.JSON para modo standalone (PWA) -->
+    <title>Localizador To Moko</title>
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Carga de Tailwind CSS para un diseño moderno y móvil-friendly -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos personalizados para la estética */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0d1117; /* Fondo oscuro */
-        }
-        .card {
-            background-color: #161b22; /* Fondo de tarjeta más claro */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .result-label {
-            color: #8b949e;
-        }
-        .result-value {
-            color: #c9d1d9;
-            word-break: break-all;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; }
+        .card { background-color: #161b22; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); }
+        .result-label { color: #8b949e; }
+        .result-value { color: #c9d1d9; word-break: break-all; }
+        img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
 
     <div id="app" class="card p-6 md:p-8 w-full max-w-sm mx-auto rounded-xl border border-gray-700">
-        <h1 class="text-2xl font-bold text-white mb-4 text-center">Localizador GPS y Distancias</h1>
-        <p class="text-sm text-gray-400 mb-6 text-center">Obtén tu posición y calcula la distancia a puntos fijos.</p>
+        <h1 class="text-2xl font-bold text-white mb-2 text-center">Localizador To Moko</h1>
+        <p class="text-sm text-gray-400 mb-6 text-center">Captura los símbolos Maorí escondidos</p>
 
-        <!-- Botón de Acción -->
-        <button id="get-location-btn" 
-                class="w-full py-3 px-4 mb-6 rounded-lg font-semibold transition duration-200 
-                       bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/50 
-                       focus:outline-none focus:ring-4 focus:ring-blue-500/50 active:scale-95">
-            Obtener Coordenadas y Distancias
+        <button id="get-location-btn" class="w-full py-3 px-4 mb-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg active:scale-95 transition">
+            Buscar
         </button>
 
-        <!-- Indicador de Carga/Mensajes -->
         <div id="message" class="text-center text-sm mb-4 text-yellow-400 hidden">
-            <!-- SVG de carga (Spinning loader) -->
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Buscando ubicación...
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-yellow-400 inline-block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Buscando To Moko...
         </div>
 
         <!-- Alerta de Coincidencia -->
         <div id="match-alert" class="mt-6 p-4 bg-green-900/50 text-green-300 border border-green-700 rounded-xl text-center hidden">
-            <!-- USO DEL SVG ALMACENADO -->
-            <svg class="h-8 w-8 text-green-300 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <use href="#location-pin"></use>
-            </svg>
-            <p class="font-bold text-lg">¡Coincidencia de Ubicación Encontrada!</p>
-            <p id="matched-station-name" class="text-sm text-green-200 mt-1"></p>
+            <div class="text-3xl mb-2">🎉</div>
+            <p class="font-bold text-lg">¡Has capturado un Moko!</p>
+            <p class="text-sm text-green-200 mt-1">Estás muy cerca de </p>
+            <p id="matched-station-name" class="font-bold text-xl text-white my-2"></p>
+            <img id="matched-station-img" src="" alt="Moko Image" class="border-2 border-green-500 mb-2">
+            <p id="matched-station-description" class="text-xs text-green-100 mt-2 text-justify italic"></p>
         </div>
 
-
-        <!-- Resultados de Ubicación Actual -->
-        <div id="results-container" class="space-y-3 p-4 bg-gray-800 rounded-lg hidden">
-            <h2 class="text-lg font-semibold text-green-400 mb-3 border-b border-gray-700 pb-2">Tu Ubicación Actual</h2>
-            
-            <div class="flex flex-col">
-                <span class="result-label text-xs">Latitud:</span>
-                <span id="latitude" class="result-value font-mono">--</span>
-            </div>
-            
-            <div class="flex flex-col">
-                <span class="result-label text-xs">Longitud:</span>
-                <span id="longitude" class="result-value font-mono">--</span>
-            </div>
+        <!-- Resultados GPS -->
+        <div id="results-container" class="mt-4 space-y-2 p-3 bg-gray-800 rounded-lg hidden text-xs">
+            <div class="flex justify-between"><span class="result-label">Lat:</span><span id="latitude" class="result-value"></span></div>
+            <div class="flex justify-between"><span class="result-label">Lon:</span><span id="longitude" class="result-value"></span></div>
         </div>
         
-        <!-- RESULTADOS DE DISTANCIA A PUNTOS FIJOS -->
+        <!-- Otros símbolos -->
         <div id="distance-results-container" class="mt-6 p-4 bg-gray-800 rounded-lg hidden">
-            <h2 class="text-lg font-semibold text-blue-400 mb-3 border-b border-gray-700 pb-2">Distancia a Puntos Fijos</h2>
-            <div id="distance-list" class="space-y-2">
-                <!-- Los resultados se inyectarán aquí -->
-            </div>
+            <h2 class="text-sm font-semibold text-blue-400 mb-3 border-b border-gray-700 pb-2 uppercase tracking-wider">Símbolos más cercanos</h2>
+            <div id="distance-list" class="space-y-2 text-sm"></div>
         </div>
 
-        <!-- Contenedor para Errores -->
-        <div id="error-box" class="p-3 mt-6 bg-red-800/30 text-red-400 rounded-lg hidden">
-            <span class="font-bold">Error de GPS:</span> <span id="error-message"></span>
-        </div>
-
-        <!-- Sugerencia de instalación para móvil -->
-        <div class="mt-6 p-3 text-center bg-gray-800/50 text-gray-400 text-xs rounded-lg border border-gray-700">
-            <p>Modo PWA: se abre en ventana propia gracias al manifest.json.</p>
+        <div id="error-box" class="p-3 mt-6 bg-red-800/30 text-red-400 rounded-lg hidden text-xs">
+            <span id="error-message"></span>
         </div>
     </div>
 
-    <!-- ======================================================= -->
-    <!-- ALMACENAMIENTO DE IMÁGENES (SVGs) - Se oculta por CSS -->
-    <!-- ======================================================= -->
-    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;">
-        <!-- Pin de Ubicación -->
-        <symbol id="location-pin" viewBox="0 0 24 24">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-        </symbol>
-        <!-- Puedes añadir más imágenes SVG aquí con otros IDs -->
-    </svg>
-
-
     <script>
+        // 1. DEFINICIÓN DE DATOS (Primero para evitar errores de referencia)
+        const STATIONS = [
+            { name: "Urutengangana", img:"img/Urutengangana.jpg", description: "Māori god of light. Eldest child of Ranginui and Papatūānuku.", lat: -41.1680009, lon: 174.0608852 },
+            { name: "Tumatauenga", img:"img/Tumatauenga.jpg", description: "God of war, hunting, and agriculture.", lat: -39.3524332, lon: 174.2214992},
+            { name: "Rūaumoko", img:"img/ruaumoko.jpg", description: "God of earthquakes and volcanoes.", lat: -42.1119642, lon: 172.6010590},
+            { name: "Rongo", img:"img/rongo.jpg", description: "God of cultivated plants and peace.", lat: -42.9150553, lon: 171.9547704},
+            { name: "Pekapeka", img:"img/pekapekamaori.jpg", description: "Māori word for bat. Only native land mammal.", lat: -37.0661338, lon: 174.8635439 },
+            { name: "Pikorua Single", img:"img/Pikorua1.jpg", description: "Symbol of eternity and joining of two people.", lat: -38.3720292, lon: 175.1396016 }
+        ];
+
         const btn = document.getElementById('get-location-btn');
         const message = document.getElementById('message');
         const resultsContainer = document.getElementById('results-container');
@@ -121,184 +77,99 @@
         const errorMessage = document.getElementById('error-message');
         const matchAlert = document.getElementById('match-alert');
         const matchedNameDisplay = document.getElementById('matched-station-name');
-
-        // Referencias a los campos de resultado de ubicación actual
+        const imgItem = document.getElementById('matched-station-img');
+        const descriptionItem = document.getElementById('matched-station-description');
         const latDisplay = document.getElementById('latitude');
         const lonDisplay = document.getElementById('longitude');
-        
-        // =======================================================
-        // 1. COORDENADAS ALMACENADAS PARA LA COMPARACIÓN
-        // =======================================================
-        const STATIONS = [
-            { name: "Sede Central (Madrid)", lat: 40.4168, lon: -3.7038 }, // Madrid
-            { name: "Punto de Reunión (Barcelona)", lat: 41.3851, lon: 2.1734 }, // Barcelona
-            { name: "Almacén Sur (Sevilla)", lat: 37.3891, lon: -5.9845 } // Sevilla
-        ];
 
-        // =======================================================
-        // 2. FUNCIÓN DE CÁLCULO DE DISTANCIA (Fórmula de Haversine)
-        // =======================================================
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la Tierra en kilómetros
-            const toRad = (degrees) => degrees * (Math.PI / 180);
-
+            const R = 6371;
+            const toRad = (d) => d * (Math.PI / 180);
             const dLat = toRad(lat2 - lat1);
             const dLon = toRad(lon2 - lon1);
-
-            const a = 
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c; // Distancia en km
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
-        /**
-         * Función que se ejecuta cuando se obtiene la ubicación con éxito.
-         * @param {GeolocationPosition} position - Objeto con los datos de la posición.
-         */
+        // CORRECCIÓN: Ahora recibe 'position'
         function success(position) {
-            console.log('--- Geolocation Status: SUCCESS ---');
-            console.log('Accuracy (m):', position.coords.accuracy);
-
-            // Detener la carga y ocultar errores
             message.classList.add('hidden');
             btn.disabled = false;
-            btn.textContent = 'Obtener Coordenadas y Distancias';
-            errorBox.classList.add('hidden');
-
+            btn.textContent = 'Buscar de nuevo';
+            
             const currentLat = position.coords.latitude;
             const currentLon = position.coords.longitude;
-            let matchFound = false;
-            let matchedStationName = '';
             
-            // 1. Mostrar ubicación actual
             latDisplay.textContent = currentLat.toFixed(6);
             lonDisplay.textContent = currentLon.toFixed(6);
             resultsContainer.classList.remove('hidden');
 
-            // 2. Limpiar e inyectar resultados de distancia
-            distanceList.innerHTML = '';
-            
-            STATIONS.forEach(station => {
-                const distanceKm = calculateDistance(currentLat, currentLon, station.lat, station.lon);
-                
-                // Si la distancia es menor a 50 metros (0.05 km), se considera una coincidencia.
-                if (distanceKm < 0.05) { 
-                    matchFound = true;
-                    matchedStationName = station.name;
-                }
-                
-                // Redondea a 2 decimales para mostrar
-                const formattedDistance = distanceKm.toFixed(2); 
+            let matchFound = false;
+            let matchedData = null;
 
-                // Crea el elemento de la lista
-                const listItem = document.createElement('div');
-                listItem.className = 'flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0';
-                listItem.innerHTML = `
-                    <span class="text-gray-300 font-medium">${station.name}:</span>
-                    <span class="text-lg font-bold ${matchFound && matchedStationName === station.name ? 'text-green-300' : 'text-blue-300'}">${formattedDistance} km</span>
-                `;
-                distanceList.appendChild(listItem);
+            // Calcular distancias y buscar coincidencia
+            STATIONS.forEach(station => {
+                const dist = calculateDistance(currentLat, currentLon, station.lat, station.lon);
+                station.distance = dist;
+
+                // Umbral de captura (15 metros = 0.015 km)
+                if (dist < 0.015) { 
+                    matchFound = true;
+                    matchedData = station;
+                }
             });
 
-            // 3. Mostrar la alerta de coincidencia si se encuentra una
+            // Ordenar por cercanía (Más cercano primero)
+            STATIONS.sort((a, b) => a.distance - b.distance);
+
+            // Mostrar los 3 más cercanos
+            distanceList.innerHTML = '';
+            STATIONS.slice(0, 3).forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between py-2 border-b border-gray-700 last:border-0';
+                item.innerHTML = `
+                    <span class="text-gray-300">🏆 ${s.name}</span>
+                    <span class="font-bold text-blue-400">${s.distance.toFixed(2)} km</span>
+                `;
+                distanceList.appendChild(item);
+            });
+            distanceContainer.classList.remove('hidden');
+
+            // Mostrar Alerta si hay captura
             if (matchFound) {
-                matchedNameDisplay.textContent = `Estás muy cerca de: ${matchedStationName}`;
+                matchedNameDisplay.textContent = matchedData.name;
+                imgItem.src = matchedData.img;
+                descriptionItem.textContent = matchedData.description;
                 matchAlert.classList.remove('hidden');
+                matchAlert.scrollIntoView({ behavior: 'smooth' });
             } else {
                 matchAlert.classList.add('hidden');
             }
-            
-            distanceContainer.classList.remove('hidden');
-
-            // Opcional: Centrar la vista en el contenedor de resultados si está en móvil
-            distanceContainer.scrollIntoView({ behavior: 'smooth' });
         }
 
-        /**
-         * Función que se ejecuta si hay un error al obtener la ubicación.
-         * @param {GeolocationPositionError} err - Objeto de error.
-         */
         function error(err) {
-            console.error('--- Geolocation Status: ERROR ---');
-            console.error('Error Code:', err.code);
-            console.error('Error Message:', err.message);
-
-            // Detener la carga y mostrar el error
             message.classList.add('hidden');
             btn.disabled = false;
-            btn.textContent = 'Obtener Coordenadas y Distancias';
-            resultsContainer.classList.add('hidden');
-            distanceContainer.classList.add('hidden');
-            matchAlert.classList.add('hidden'); // Ocultar coincidencia en caso de error
-
-            let msg = '';
-            switch (err.code) {
-                case err.PERMISSION_DENIED:
-                    msg = "Permiso denegado (Code 1): Necesitas permitir el acceso a la ubicación.";
-                    break;
-                case err.POSITION_UNAVAILABLE:
-                    msg = "Posición no disponible (Code 2): No se puede determinar la ubicación.";
-                    break;
-                case err.TIMEOUT:
-                    msg = "Tiempo de espera agotado (Code 3): El intento de obtener la ubicación ha tardado demasiado (20 segundos). Intenta de nuevo o muévete a un lugar con mejor señal GPS.";
-                    break;
-                default:
-                    msg = "Error desconocido (" + err.code + ").";
-            }
-
-            errorMessage.textContent = msg;
+            btn.textContent = 'Reintentar';
             errorBox.classList.remove('hidden');
-            
-            // Si el error es TimeOut, es un fallo "limpio" pero no hubo ubicación
-            if (err.code === err.TIMEOUT) {
-                console.warn("Geolocation timed out. Re-enabling button and showing error box.");
-            }
+            errorMessage.textContent = `Error: ${err.message}`;
         }
 
-        /**
-         * Función principal para solicitar la ubicación.
-         */
         function getLocation() {
-            console.log('--- Geolocation Started ---');
-            
-            if (!navigator.geolocation) {
-                // Si el navegador no soporta Geolocation
-                errorMessage.textContent = "Tu navegador no soporta la API de Geolocation.";
-                errorBox.classList.remove('hidden');
-                console.error('Geolocation not supported by browser.');
-                return;
-            }
-
-            // Ocultar resultados y errores previos
-            resultsContainer.classList.add('hidden');
-            distanceContainer.classList.add('hidden');
+            matchAlert.classList.add('hidden');
             errorBox.classList.add('hidden');
-            matchAlert.classList.add('hidden'); // Siempre ocultar al inicio
-            
-            // Mostrar estado de carga y deshabilitar botón
             message.classList.remove('hidden');
             btn.disabled = true;
-            btn.textContent = 'Buscando...';
+            btn.textContent = 'Localizando...';
 
-            // Opciones de Geolocation: alta precisión y tiempo máximo de espera de 20 segundos
-            const options = {
+            navigator.geolocation.getCurrentPosition(success, error, {
                 enableHighAccuracy: true,
-                timeout: 20000, // Aumentado a 20 segundos
-                maximumAge: 0 // No usar caché
-            };
-            
-            console.log('Requesting position with timeout:', options.timeout / 1000, 'seconds');
-
-            // Llamada a la API de Geolocation
-            navigator.geolocation.getCurrentPosition(success, error, options);
+                timeout: 15000,
+                maximumAge: 0
+            });
         }
 
-        // Asignar el evento click al botón
         btn.addEventListener('click', getLocation);
-
     </script>
 </body>
 </html>
