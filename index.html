@@ -3,179 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To Moko - Máxima Compatibilidad Offline</title>
+    <title>To Moko - Colección Ancestral</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; overflow-x: hidden; }
         .card { background-color: #161b22; border: 1px solid #30363d; }
-        .moko-img-container { position: relative; width: 100%; height: 200px; background: #010409; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .radar-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .moko-img-container { position: relative; width: 100%; height: 200px; background: #010409; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #30363d; }
         #matched-station-img { width: 100%; height: 100%; object-fit: cover; }
-        .offline-badge { font-size: 10px; background: #238636; color: white; padding: 2px 6px; border-radius: 10px; margin-top: 4px; display: inline-block; }
+        .tab-active { color: #6366f1; border-bottom: 2px solid #6366f1; }
+        .unlocked-item { transition: all 0.3s ease; cursor: pointer; }
+        .unlocked-item:active { transform: scale(0.95); }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
 
-    <div id="app" class="card p-6 w-full max-w-sm mx-auto rounded-xl shadow-2xl border border-gray-700">
-        <header class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-white uppercase tracking-tighter">To Moko Collector</h1>
-            <div id="status-badge" class="offline-badge">Cargando recursos...</div>
-        </header>
-
-        <!-- Selección de Modo -->
-        <div class="flex mb-6 bg-gray-900 p-1 rounded-lg">
-            <button id="mode-gps-btn" class="flex-1 py-2 text-xs font-bold rounded-md bg-indigo-600 text-white transition-all">GPS</button>
-            <button id="mode-manual-btn" class="flex-1 py-2 text-xs font-bold rounded-md text-gray-400 hover:text-white transition-all">MANUAL</button>
+    <div id="app" class="card p-6 w-full max-w-sm mx-auto rounded-2xl shadow-2xl relative overflow-hidden">
+        
+        <!-- Estado y Sincronización -->
+        <div class="flex justify-between items-center mb-4">
+            <div id="status-badge" class="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 text-[9px] font-bold border border-orange-500/30 uppercase">Sincronizando...</div>
+            <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">v2.1 Stable</span>
         </div>
 
-        <div id="gps-section">
-            <button id="get-location-btn" class="w-full py-4 px-4 mb-4 rounded-lg font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg active:scale-95 transition-all">BUSCAR POR GPS</button>
-        </div>
+        <!-- Navegación de Pestañas -->
+        <nav class="flex border-b border-gray-800 mb-6">
+            <button id="tab-scanner-btn" class="flex-1 py-3 text-xs font-bold tab-active">ESCÁNER</button>
+            <button id="tab-collection-btn" class="flex-1 py-3 text-xs font-bold text-gray-500">COLECCIÓN (<span id="unlocked-count">0</span>)</button>
+        </nav>
 
-        <div id="manual-section" class="hidden space-y-3 mb-6">
-            <div class="grid grid-cols-2 gap-2">
-                <input type="number" id="input-lat" step="any" placeholder="Latitud" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white outline-none">
-                <input type="number" id="input-lon" step="any" placeholder="Longitud" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-white outline-none">
+        <!-- SECCIÓN: ESCÁNER -->
+        <div id="section-scanner">
+            <header class="text-center mb-8" id="scanner-header">
+                <h1 class="text-3xl font-black text-white tracking-tighter italic">TO MOKO</h1>
+                <p class="text-xs text-gray-400">Rastreador de coordenadas</p>
+            </header>
+
+            <!-- Radar -->
+            <div id="radar-screen" class="hidden flex flex-col items-center justify-center py-6">
+                <div class="relative w-32 h-32 mb-6">
+                    <div class="absolute inset-0 border-2 border-indigo-500/30 rounded-full"></div>
+                    <div class="absolute inset-0 border-2 border-indigo-500/50 rounded-full radar-pulse"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-10 h-10 text-indigo-500 animate-spin" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-indigo-400 font-bold text-xs animate-pulse tracking-widest">ANALIZANDO FRECUENCIAS...</p>
+                <p id="scanning-coords" class="text-[9px] text-gray-600 font-mono mt-2 uppercase"></p>
             </div>
-            <button id="manual-search-btn" class="w-full py-3 px-4 rounded-lg font-bold bg-gray-700 hover:bg-gray-600 text-white transition-all">COMPARAR</button>
-        </div>
 
-        <div id="match-alert" class="mt-4 p-4 bg-green-900/30 border border-green-500/50 rounded-xl hidden">
-            <h2 id="matched-station-name" class="text-center text-xl font-bold text-white mb-3 uppercase tracking-widest"></h2>
-            <div class="moko-img-container mb-3 border border-gray-700">
-                <img id="matched-station-img" src="" alt="Moko Image">
+            <!-- Controles -->
+            <div id="input-controls">
+                <div class="flex mb-4 bg-gray-900/50 p-1 rounded-xl border border-gray-800">
+                    <button id="mode-gps-btn" class="flex-1 py-2 text-[10px] font-bold rounded-lg bg-indigo-600 text-white">GPS</button>
+                    <button id="mode-manual-btn" class="flex-1 py-2 text-[10px] font-bold rounded-lg text-gray-500">MANUAL</button>
+                </div>
+
+                <div id="gps-section">
+                    <button id="get-location-btn" class="w-full py-4 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl active:scale-95 transition-all uppercase text-xs tracking-widest">Escaneo Satelital</button>
+                </div>
+
+                <div id="manual-section" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="input-lat" step="any" placeholder="Lat" class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-xs text-white outline-none">
+                        <input type="number" id="input-lon" step="any" placeholder="Lon" class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-xs text-white outline-none">
+                    </div>
+                    <button id="manual-search-btn" class="w-full py-3 rounded-lg font-bold bg-gray-700 text-white text-xs uppercase">Rastreo Manual</button>
+                </div>
             </div>
-            <p id="matched-station-description" class="text-xs text-gray-300 leading-relaxed text-justify"></p>
+
+            <!-- Alerta de Hallazgo -->
+            <div id="match-alert" class="mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl hidden">
+                <h2 id="matched-station-name" class="text-xl font-black text-white mb-3 italic"></h2>
+                <div class="moko-img-container mb-3 border border-gray-700">
+                    <img id="matched-station-img" src="" alt="Moko">
+                </div>
+                <p id="matched-station-description" class="text-[10px] text-gray-300 italic"></p>
+            </div>
+
+            <div id="distance-results-container" class="mt-6 hidden">
+                <h3 class="text-[9px] font-bold text-gray-600 uppercase mb-3 tracking-widest">Cercanía detectada</h3>
+                <div id="distance-list" class="space-y-2"></div>
+            </div>
         </div>
 
-        <div id="distance-results-container" class="mt-8 hidden">
-            <h3 class="text-[10px] font-bold text-gray-500 uppercase mb-3 tracking-widest border-b border-gray-800 pb-2">Objetivos cercanos</h3>
-            <div id="distance-list" class="space-y-2"></div>
+        <!-- SECCIÓN: COLECCIÓN -->
+        <div id="section-collection" class="hidden">
+            <h2 class="text-xl font-black text-white mb-4 italic uppercase">Mis Hallazgos</h2>
+            <div id="collection-grid" class="grid grid-cols-2 gap-3">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div id="empty-collection" class="text-center py-10">
+                <p class="text-xs text-gray-500 italic">No has encontrado ningún Moko todavía.</p>
+            </div>
         </div>
+
     </div>
 
-    <!-- Contenedor oculto para forzar la carga de imágenes en el DOM -->
+    <!-- Preloader oculto -->
     <div id="preloader" style="display:none"></div>
 
     <script>
+        // --- DATA ---
         const STATIONS = [
-            { name: "Urutengangana", img: "img/Urutengangana.jpg", description: "Dios de la luz. El primogénito de los dioses.", lat: -41.1680009, lon: 174.0608852 },
-            { name: "Tumatauenga", img: "img/Tumatauenga.jpg", description: "Dios de la guerra y la caza.", lat: -39.3524332, lon: 174.2214992},
-            { name: "Rūaumoko", img: "img/ruaumoko.jpg", description: "Dios de los terremotos y volcanes.", lat: -42.1119642, lon: 172.6010590},
-            { name: "Pekapeka", img: "img/pekapekamaori.jpg", description: "Murciélago nativo maorí.", lat: -37.0661338, lon: 174.8635439 },
-            { name: "Rongo", img: "img/rongo.jpg", description: "Dios de la paz y la agricultura.", lat: -42.9150553, lon: 171.9547704}
+            { id: "uru", name: "Urutengangana", img: "img/Urutengangana.jpg", description: "Primogénito de los dioses. Representa la luz original.", lat: -41.1680009, lon: 174.0608852 },
+            { id: "tum", name: "Tumatauenga", img: "img/Tumatauenga.jpg", description: "Dios de la guerra y guardián de la fuerza humana.", lat: -39.3524332, lon: 174.2214992},
+            { id: "rua", name: "Rūaumoko", img: "img/ruaumoko.jpg", description: "El hijo no nacido, causante de terremotos y volcanes.", lat: -42.1119642, lon: 172.6010590},
+            { id: "pek", name: "Pekapeka", img: "img/pekapekamaori.jpg", description: "El espíritu de la noche en forma de murciélago nativo.", lat: -37.0661338, lon: 174.8635439 },
+            { id: "ron", name: "Rongo", img: "img/rongo.jpg", description: "Dios de la paz y protector de los cultivos.", lat: -42.9150553, lon: 171.9547704}
         ];
 
-        // --- MÉDOTO DE SECUESTRO: Pre-carga por DOM ---
-        function forceImagePreload() {
-            const preloader = document.getElementById('preloader');
-            let loadedCount = 0;
-            
-            STATIONS.forEach(s => {
-                const img = new Image();
-                img.src = s.img;
-                img.onload = () => {
-                    loadedCount++;
-                    if(loadedCount === STATIONS.length) {
-                        document.getElementById('status-badge').textContent = "Listo para usar Offline";
-                        document.getElementById('status-badge').classList.replace('bg-orange-500', 'bg-green-600');
-                    }
-                };
-                img.onerror = () => console.warn("No se pudo precargar: " + s.img);
-                preloader.appendChild(img);
-            });
-        }
+        // --- ESTADO (LocalStorage) ---
+        let unlockedIds = JSON.parse(localStorage.getItem('unlocked_mokos') || '[]');
 
-        // Lógica de UI
+        // --- ELEMENTOS ---
         const btnGps = document.getElementById('get-location-btn');
         const btnManual = document.getElementById('manual-search-btn');
+        const radarScreen = document.getElementById('radar-screen');
+        const inputControls = document.getElementById('input-controls');
+        const scannerHeader = document.getElementById('scanner-header');
         const matchAlert = document.getElementById('match-alert');
         const distanceList = document.getElementById('distance-list');
+        const collectionGrid = document.getElementById('collection-grid');
+        const unlockedCountDisplay = document.getElementById('unlocked-count');
 
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        // --- LÓGICA DE COLECCIÓN ---
+        function saveMoko(id) {
+            if (!unlockedIds.includes(id)) {
+                unlockedIds.push(id);
+                localStorage.setItem('unlocked_mokos', JSON.stringify(unlockedIds));
+                updateCollectionUI();
+            }
         }
 
-        function processLocation(lat, lon) {
-            let match = null;
+        function updateCollectionUI() {
+            unlockedCountDisplay.textContent = unlockedIds.length;
+            collectionGrid.innerHTML = '';
+            
+            if (unlockedIds.length > 0) {
+                document.getElementById('empty-collection').classList.add('hidden');
+                unlockedIds.forEach(id => {
+                    const moko = STATIONS.find(s => s.id === id);
+                    if (moko) {
+                        const div = document.createElement('div');
+                        div.className = "unlocked-item card p-2 rounded-xl border border-gray-700 bg-gray-900/40";
+                        div.onclick = () => showMokoDetail(moko);
+                        div.innerHTML = `
+                            <div class="h-20 w-full overflow-hidden rounded-lg mb-2">
+                                <img src="${moko.img}" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all">
+                            </div>
+                            <p class="text-[9px] font-bold text-center text-white uppercase tracking-tighter">${moko.name}</p>
+                        `;
+                        collectionGrid.appendChild(div);
+                    }
+                });
+            }
+        }
+
+        function showMokoDetail(moko) {
+            switchTab('scanner');
+            document.getElementById('matched-station-name').textContent = moko.name;
+            document.getElementById('matched-station-img').src = moko.img;
+            document.getElementById('matched-station-description').textContent = moko.description;
+            matchAlert.classList.remove('hidden');
+            matchAlert.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- LÓGICA DE NAVEGACIÓN ---
+        function switchTab(target) {
+            const isScanner = target === 'scanner';
+            document.getElementById('section-scanner').classList.toggle('hidden', !isScanner);
+            document.getElementById('section-collection').classList.toggle('hidden', isScanner);
+            document.getElementById('tab-scanner-btn').classList.toggle('tab-active', isScanner);
+            document.getElementById('tab-collection-btn').classList.toggle('tab-active', !isScanner);
+        }
+
+        document.getElementById('tab-scanner-btn').onclick = () => switchTab('scanner');
+        document.getElementById('tab-collection-btn').onclick = () => switchTab('collection');
+
+        // --- LÓGICA DE ESCÁNER (Radar 3s) ---
+        async function triggerRadar(lat, lon) {
+            inputControls.classList.add('hidden');
+            scannerHeader.classList.add('opacity-10');
+            matchAlert.classList.add('hidden');
+            document.getElementById('distance-results-container').classList.add('hidden');
+            radarScreen.classList.remove('hidden');
+            document.getElementById('scanning-coords').textContent = `LAT: ${lat.toFixed(3)} | LON: ${lon.toFixed(3)}`;
+
+            await new Promise(r => setTimeout(r, 3000));
+
+            radarScreen.classList.add('hidden');
+            scannerHeader.classList.remove('opacity-10');
+            inputControls.classList.remove('hidden');
+
+            const R = 6371;
             STATIONS.forEach(s => {
-                s.distance = calculateDistance(lat, lon, s.lat, s.lon);
-                if (s.distance < 0.05) match = s;
+                const dLat = (s.lat - lat) * Math.PI / 180;
+                const dLon = (s.lon - lon) * Math.PI / 180;
+                const a = Math.sin(dLat/2)**2 + Math.cos(lat*Math.PI/180) * Math.cos(s.lat*Math.PI/180) * Math.sin(dLon/2)**2;
+                s.distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             });
-            STATIONS.sort((a, b) => a.distance - b.distance);
+
+            STATIONS.sort((a,b) => a.distance - b.distance);
             
             distanceList.innerHTML = '';
-            STATIONS.slice(0, 3).forEach(s => {
+            STATIONS.slice(0,3).forEach(s => {
                 const item = document.createElement('div');
-                item.className = 'flex justify-between p-2 bg-gray-800/20 border border-gray-800 rounded';
-                item.innerHTML = `<span class='text-xs'>${s.name}</span><span class='text-xs font-bold text-indigo-400'>${s.distance.toFixed(2)} km</span>`;
+                item.className = 'flex justify-between p-2 bg-gray-900/30 border border-gray-800 rounded-lg text-[10px]';
+                item.innerHTML = `<span class="text-gray-400 font-bold">${s.name}</span><span class="text-indigo-400 font-mono">${s.distance.toFixed(2)}km</span>`;
                 distanceList.appendChild(item);
             });
             document.getElementById('distance-results-container').classList.remove('hidden');
 
-            if (match) {
-                document.getElementById('matched-station-name').textContent = match.name;
-                document.getElementById('matched-station-img').src = match.img;
-                document.getElementById('matched-station-description').textContent = match.description;
+            const nearest = STATIONS[0];
+            if (nearest.distance < 0.05) {
+                saveMoko(nearest.id); // GUARDAR EN LOCALSTORAGE
+                document.getElementById('matched-station-name').textContent = nearest.name;
+                document.getElementById('matched-station-img').src = nearest.img;
+                document.getElementById('matched-station-description').textContent = nearest.description;
                 matchAlert.classList.remove('hidden');
-            } else {
-                matchAlert.classList.add('hidden');
             }
         }
 
-        // Eventos
+        // --- BOTONES ---
         btnGps.onclick = () => {
-            navigator.geolocation.getCurrentPosition(p => processLocation(p.coords.latitude, p.coords.longitude));
+            navigator.geolocation.getCurrentPosition(p => triggerRadar(p.coords.latitude, p.coords.longitude));
         };
         btnManual.onclick = () => {
             const la = parseFloat(document.getElementById('input-lat').value);
             const lo = parseFloat(document.getElementById('input-lon').value);
-            if (!isNaN(la)) processLocation(la, lo);
+            if (!isNaN(la)) triggerRadar(la, lo);
         };
-
-        // Cambios de modo
-        document.getElementById('mode-gps-btn').onclick = function() {
+        document.getElementById('mode-gps-btn').onclick = () => {
             document.getElementById('gps-section').classList.remove('hidden');
             document.getElementById('manual-section').classList.add('hidden');
+            document.getElementById('mode-gps-btn').classList.add('bg-indigo-600');
+            document.getElementById('mode-manual-btn').classList.remove('bg-indigo-600');
         };
-        document.getElementById('mode-manual-btn').onclick = function() {
+        document.getElementById('mode-manual-btn').onclick = () => {
             document.getElementById('manual-section').classList.remove('hidden');
             document.getElementById('gps-section').classList.add('hidden');
+            document.getElementById('mode-manual-btn').classList.add('bg-indigo-600');
+            document.getElementById('mode-gps-btn').classList.remove('bg-indigo-600');
         };
 
-        // --- SERVICE WORKER INTEGRADO ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                forceImagePreload(); // Iniciar "secuestro" de imágenes inmediatamente
-                
-                const swContent = `
-                const CACHE_NAME = 'moko-v5';
-                self.addEventListener('install', e => {
-                    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./', './index.html'])));
-                });
-                self.addEventListener('fetch', e => {
-                    e.respondWith(
-                        caches.match(e.request).then(res => {
-                            if(res) return res;
-                            return fetch(e.request).then(netRes => {
-                                // Guardar cualquier recurso (incluyendo imágenes img/*) que pase por aquí
-                                if(e.request.url.includes('img/') || e.request.url.includes('cdn.tailwindcss.com')) {
-                                    const clone = netRes.clone();
-                                    caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-                                }
-                                return netRes;
-                            });
-                        })
-                    );
-                });`;
-                const blob = new Blob([swContent], {type: 'text/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(blob));
+        // --- INIT ---
+        window.onload = () => {
+            updateCollectionUI();
+            const container = document.getElementById('preloader');
+            STATIONS.forEach(s => {
+                const img = new Image();
+                img.src = s.img;
+                container.appendChild(img);
             });
+            setTimeout(() => {
+                const b = document.getElementById('status-badge');
+                b.textContent = "Listo para expedición";
+                b.className = "px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[9px] font-bold border border-green-500/30 uppercase";
+            }, 2000);
+        };
+
+        // --- SERVICE WORKER ---
+        if ('serviceWorker' in navigator) {
+            const sw = `
+                const NAME = 'moko-v6-collection';
+                self.addEventListener('install', e => e.waitUntil(caches.open(NAME).then(c => c.addAll(['./', './index.html']))));
+                self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+                    if(e.request.url.includes('img/') || e.request.url.includes('cdn')) {
+                        const cl = res.clone();
+                        caches.open(NAME).then(c => c.put(e.request, cl));
+                    }
+                    return res;
+                }))));
+            `;
+            const b = new Blob([sw], {type: 'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(b));
         }
     </script>
 </body>
