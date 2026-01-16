@@ -112,38 +112,35 @@
             });
             STATIONS.sort((a, b) => a.distance - b.distance);
             
-            distanceList.innerHTML = '';
-            STATIONS.slice(0, 3).forEach(s => {
-                const item = document.createElement('div');
-                item.className = 'flex justify-between p-2 bg-gray-800/20 border border-gray-800 rounded';
-                item.innerHTML = `<span class='text-xs'>${s.name}</span><span class='text-xs font-bold text-indigo-400'>${s.distance.toFixed(2)} km</span>`;
-                distanceList.appendChild(item);
-            });
-            document.getElementById('distance-results-container').classList.remove('hidden');
-
-            if (match) {
-                document.getElementById('matched-station-name').textContent = match.name;
-                document.getElementById('matched-station-img').src = match.img;
-                document.getElementById('matched-station-description').textContent = match.description;
-                matchAlert.classList.remove('hidden');
-                
-        // EJECUCIÓN DE LA PERSISTENCIA
-                saveMatch(match.name);
-            } else {
-                matchAlert.classList.add('hidden');
-            }
-        }
-
-        // NUEVA FUNCIÓN DE PERSISTENCIA
-        function saveMatch(stationId) {
-            // Recuperar lista actual o crear una nueva si no existe
-            let collected = JSON.parse(localStorage.getItem('moko_collected') || "[]");
+        // ... dentro de processLocation, en el bucle que genera la lista de objetivos:
+        
+        distanceList.innerHTML = '';
+        STATIONS.slice(0, 3).forEach(s => {
+            const collected = JSON.parse(localStorage.getItem('moko_collected') || "[]");
+            const isCollected = collected.includes(s.name);
             
-            // Añadir solo si no estaba ya en la lista (evitar duplicados)
+            const item = document.createElement('div');
+            // Añadimos una clase condicional para resaltar los ya capturados (opacidad o borde dorado)
+            item.className = `flex justify-between p-2 border rounded ${isCollected ? 'bg-indigo-900/40 border-indigo-500' : 'bg-gray-800/20 border-gray-800'}`;
+            
+            item.innerHTML = `
+                <span class='text-xs ${isCollected ? 'text-indigo-200 font-bold' : ''}'>
+                    ${s.name} ${isCollected ? '✓' : ''}
+                </span>
+                <span class='text-xs font-bold text-indigo-400'>${s.distance.toFixed(2)} km</span>
+            `;
+            distanceList.appendChild(item);
+        });
+
+        // ... mantener la función saveMatch anterior e incluir esta llamada al final:
+
+        function saveMatch(stationId) {
+            let collected = JSON.parse(localStorage.getItem('moko_collected') || "[]");
             if (!collected.includes(stationId)) {
                 collected.push(stationId);
                 localStorage.setItem('moko_collected', JSON.stringify(collected));
                 console.log("Guardado en local:", stationId);
+                // No es necesario refrescar la página, la siguiente búsqueda actualizará la lista
             }
         }
 
