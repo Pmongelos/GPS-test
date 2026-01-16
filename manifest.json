@@ -1,7 +1,7 @@
 {
-  "name": "Localizador GPS",
-  "short_name": "MiGPS",
-  "description": "Aplicación para obtener coordenadas GPS sin conexión y calcular distancias.",
+  "name": "Moko Catcher",
+  "short_name": "Moko",
+  "description": "Escanea símbolos maoríes secretos a tu alrededor",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d1117",
