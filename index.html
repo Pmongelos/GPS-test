@@ -193,30 +193,16 @@ document.getElementById('distance-results-container').classList.remove('hidden')
                 }
                 
                 const swContent = `
-                const CACHE_NAME = 'moko-v5';
-                
+                const CACHE_NAME = 'moko-v2';
                 self.addEventListener('install', e => {
-                    // Solo intentar cachear el index si estamos online durante la instalación
-                    if (navigator.onLine) {
-                        e.waitUntil(
-                            caches.open(CACHE_NAME).then(c => c.addAll(['./', './index.html']))
-                        );
-                    }
+                    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(['./', './index.html'])));
                 });
-
                 self.addEventListener('fetch', e => {
                     e.respondWith(
                         caches.match(e.request).then(res => {
-                            // Si el recurso está en caché, lo devolvemos inmediatamente
-                            if (res) return res;
-
-                            // Si NO está en caché y estamos OFFLINE, no intentamos fetch
-                            if (!navigator.onLine) {
-                                return new Response("Offline: Recurso no disponible", { status: 503 });
-                            }
-
-                            // Si estamos ONLINE y no está en caché, lo buscamos y guardamos
+                            if(res) return res;
                             return fetch(e.request).then(netRes => {
+                                // Guardar cualquier recurso (incluyendo imágenes img/*) que pase por aquí
                                 if(e.request.url.includes('img/') || e.request.url.includes('cdn.tailwindcss.com')) {
                                     const clone = netRes.clone();
                                     caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
