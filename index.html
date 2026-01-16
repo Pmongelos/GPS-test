@@ -77,7 +77,7 @@
                 img.src = s.img;
                 img.onload = () => {
                     loadedCount++;
-                    if(loadedCount === STATIONS.length) {
+                    if(loadedCount >= STATIONS.length) {
                         document.getElementById('status-badge').textContent = "Listo para usar Offline";
                         document.getElementById('status-badge').classList.replace('bg-orange-500', 'bg-green-600');
                     }
