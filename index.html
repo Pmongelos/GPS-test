@@ -186,8 +186,13 @@ document.getElementById('distance-results-container').classList.remove('hidden')
             window.addEventListener('load', () => {
                 // Solo forzar precarga de imágenes si hay internet
                 if (navigator.onLine) {
+alert("nav online");
+
                     forceImagePreload();
+alert("image preloaded");
+
                 } else {
+alert("navigator offline");
                     document.getElementById('status-badge').textContent = "Modo Offline";
                     document.getElementById('status-badge').style.backgroundColor = 'blue';
                 }
