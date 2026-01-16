@@ -101,10 +101,13 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
+        // ... (resto del código anterior se mantiene igual)
+
         function processLocation(lat, lon) {
             let match = null;
             STATIONS.forEach(s => {
                 s.distance = calculateDistance(lat, lon, s.lat, s.lon);
+                // Usamos el nombre como ID único para el almacenamiento
                 if (s.distance < 0.05) match = s;
             });
             STATIONS.sort((a, b) => a.distance - b.distance);
@@ -123,8 +126,24 @@
                 document.getElementById('matched-station-img').src = match.img;
                 document.getElementById('matched-station-description').textContent = match.description;
                 matchAlert.classList.remove('hidden');
+                
+        // EJECUCIÓN DE LA PERSISTENCIA
+                saveMatch(match.name);
             } else {
                 matchAlert.classList.add('hidden');
+            }
+        }
+
+        // NUEVA FUNCIÓN DE PERSISTENCIA
+        function saveMatch(stationId) {
+            // Recuperar lista actual o crear una nueva si no existe
+            let collected = JSON.parse(localStorage.getItem('moko_collected') || "[]");
+            
+            // Añadir solo si no estaba ya en la lista (evitar duplicados)
+            if (!collected.includes(stationId)) {
+                collected.push(stationId);
+                localStorage.setItem('moko_collected', JSON.stringify(collected));
+                console.log("Guardado en local:", stationId);
             }
         }
 
