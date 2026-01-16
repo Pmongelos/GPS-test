@@ -132,6 +132,21 @@
             distanceList.appendChild(item);
         });
 
+
+document.getElementById('distance-results-container').classList.remove('hidden');
+
+            if (match) {
+                document.getElementById('matched-station-name').textContent = match.name;
+                document.getElementById('matched-station-img').src = match.img;
+                document.getElementById('matched-station-description').textContent = match.description;
+                matchAlert.classList.remove('hidden');
+                
+                // EJECUCIÓN DE LA PERSISTENCIA
+                saveMatch(match.name);
+            } else {
+                matchAlert.classList.add('hidden');
+            }
+        }
         // ... mantener la función saveMatch anterior e incluir esta llamada al final:
 
         function saveMatch(stationId) {
