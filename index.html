@@ -183,6 +183,7 @@ document.getElementById('distance-results-container').classList.remove('hidden')
 
         // --- SERVICE WORKER INTEGRADO Y OPTIMIZADO ---
         if ('serviceWorker' in navigator) {
+alert("service worker in nav");
             window.addEventListener('load', () => {
                 // Solo forzar precarga de imágenes si hay internet
                 if (navigator.onLine) {
