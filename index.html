@@ -79,7 +79,9 @@
                     loadedCount++;
                     if(loadedCount >= STATIONS.length) {
                         document.getElementById('status-badge').textContent = "Ready";
-                        document.getElementById('status-badge').classList.replace('offline-badge', 'font-size: 10px; background: green; color: white; padding: 2px 6px; border-radius: 10px; margin-top: 4px; display: inline-block;');
+                        document.getElementById('status-badge').style.background = 'green';
+
+
                     }
                 };
                 img.onerror = () => console.warn("No se pudo precargar: " + s.img);
