@@ -12,7 +12,7 @@
         .card { background-color: #161b22; border: 1px solid #30363d; }
         .moko-img-container { position: relative; width: 100%; height: 200px; background: #010409; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         #matched-station-img { width: 100%; height: 100%; object-fit: cover; }
-        .offline-badge { font-size: 10px; background: #238636; color: white; padding: 2px 6px; border-radius: 10px; margin-top: 4px; display: inline-block; }
+        .offline-badge { font-size: 10px; background: bg-orange-500; color: white; padding: 2px 6px; border-radius: 10px; margin-top: 4px; display: inline-block; }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
@@ -78,7 +78,7 @@
                 img.onload = () => {
                     loadedCount++;
                     if(loadedCount >= STATIONS.length) {
-                        document.getElementById('status-badge').textContent = "Listo para usar Offline";
+                        document.getElementById('status-badge').textContent = "Ready";
                         document.getElementById('status-badge').classList.replace('bg-orange-500', 'bg-green-600');
                     }
                 };
